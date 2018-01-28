@@ -8,6 +8,9 @@
 # Copyright (c) 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005,
 # 2006, 2007, 2008, 2009, 2010, 2011 Comite Reseau des Universites
 # Copyright (c) 2011, 2012, 2013, 2014, 2015, 2016, 2017 GIP RENATER
+# Copyright 2019 The Sympa Community. See the AUTHORS.md file at
+# the top-level directory of this distribution and at
+# <https://github.com/sympa-community/sympa.git>.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -103,6 +106,38 @@ sub daemonize {
     } else {
         $self->{detached} = 1;
     }
+}
+
+sub demote {
+    my $gid = [getgrnam Sympa::Constants::GROUP()]->[2]
+        or die sprintf "Unknown group '%s'.\n", Sympa::Constants::GROUP();
+    my $uid = [getpwnam Sympa::Constants::USER()]->[2]
+        or die sprintf "Unknown user '%s'.\n", Sympa::Constants::USER();
+    my $umask = $Conf::Conf{'umask'}
+        or die "Unknown umask.\n";
+    my $home = $Conf::Conf{'home'}
+        or die "Unknown home directory.\n";
+
+    # Set the group ID and then the user ID for the process.
+    $GID = $EGID = $gid;
+    $UID = $EUID = $uid;
+
+    # Required on FreeBSD to change ALL IDs (effective UID, real UID and
+    # saved UID).
+    POSIX::setuid($uid);
+    POSIX::setgid($gid);
+
+    # Check if the UID has correctly been set (useful on OS X).
+    die
+        "Failed to change process user ID and group ID. Note that on some OS Perl scripts can't change their real UID. In such circumstances Sympa should be run via sudo.\n"
+        unless $GID == $gid and $UID == $uid;
+
+    # Set the umask.
+    umask oct $umask;
+
+    # Change to list root.
+    die sprintf 'Unable to change to directory %s: %s\n', $home, $ERRNO
+        unless chdir $home;
 }
 
 sub fork {
@@ -507,6 +542,7 @@ Sympa::Process - Process of Sympa
   $process->init(pidname => 'sympa');
 
   $process->daemonize;
+  $process->demote;
 
   $process->fork;
 
@@ -545,6 +581,20 @@ I<Instance method>.
 Daemonizes process itself.
 Process is given new process group, detached from TTY
 and given new process ID.
+
+Parameters:
+
+None.
+
+Returns:
+
+None.
+
+=item demote ( )
+
+I<Instance method>.
+Sets UID and GID of process itself to those dedicated to Sympa,
+and sets umask.
 
 Parameters:
 
@@ -701,5 +751,7 @@ Sympa 6.2.13 introduced daemonize() method and {detached} attribute.
 As of Sympa 6.2.14, C<SIGCHLD> signal was captured and child processes
 were reaped immediately.  reap_child() method (formerly reaper()) was
 deprecated.
+
+Sympa 6.2.4X introduced demote() method.
 
 =cut

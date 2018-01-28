@@ -11,6 +11,7 @@ use English qw(-no_match_vars);
 use Conf;
 use Sympa::Constants;
 use Sympa::Log;
+use Sympa::Process;
 use Sympa::Spool::Moderation;
 
 my $log = Sympa::Log->instance;
@@ -24,12 +25,7 @@ $log->openlog(
     service => 'sympa/mod2html'
 );
 
-# Set the UserID & GroupID for the process
-$GID = $EGID = (getgrnam(Sympa::Constants::GROUP))[2];
-$UID = $EUID = (getpwnam(Sympa::Constants::USER))[2];
-
-# Sets the UMASK.
-umask oct $Conf::Conf{'umask'};
+Sympa::Process->instance->demote;
 
 my $spool_mod = Sympa::Spool::Moderation->new;
 
