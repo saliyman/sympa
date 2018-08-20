@@ -111,7 +111,11 @@
   <h2><i class="fa fa-check-circle"></i>
     [%|loc%]Distribute[%END%]
   </h2>
-
+  [% UNLESS topic_required ~%]
+  <p><strong>
+    [%|loc%]Are you sure you wish to distribute selected messages?[%END%]
+  </strong></p>
+  [%~ END %]
 [%~ ELSIF confirm_action == 'd_admin' && d_admin == 'delete' ~%]
   <h2><i class="fa fa-check-circle"></i>
     [%|loc%]Delete Shared[%END%]
@@ -173,6 +177,13 @@
   </h2>
   <p><strong>
     [%|loc%]Are you sure you wish to purge selected lists?[%END%]
+  </strong></p>
+[%~ ELSIF confirm_action == 'reject' ~%]
+  <h2><i class="fa fa-check-circle"></i>
+    [%|loc%]Reject[%END%]
+  </h2>
+  <p><strong>
+    [%|loc%]Are you sure you wish to reject selected messages?[%END%]
   </strong></p>
 [%~ ELSIF confirm_action == 'remind' ~%]
   <h2><i class="fa fa-check-circle"></i>
@@ -295,16 +306,17 @@
   [%~ END %]
   [% IF topic_required ~%]
     <h3>[%|loc%]This list is configured to require topic(s).[%END%]</h3>
+    <p>[%|loc%]Please select one or more topic(s) that corresponds to the messages you wish to distribute:[%END%]</p>
+    <ul>
+    [% FOREACH t = listconf.msg_topic ~%]
+      [% NEXT UNLESS t && t.name ~%]
+      <li><input type="checkbox" name="topic" id="topic_[%t.name%]"
+        value="[% t.name %]"
+        [%~ IF topic.grep("^${t.name}$").size() %] checked="checked"[%END%] />
+      <label for="topic_[%t.name%]">[% t.title %] </label></li>
+    [%~ END %]
+    </ul>
   [%~ END %]
-  <p>[%|loc%]Please select one or more topic(s) that corresponds to the messages you wish to distribute:[%END%]</p>
-  <ul>
-  [% FOREACH t = listconf.msg_topic ~%]
-    [% NEXT UNLESS t && t.name ~%]
-    <li><input type="checkbox" name="topic" id="topic_[%t.name%]"
-      value="[% t.name %]" />
-    <label for="topic_[%t.name%]">[% t.title %] </label></li>
-  [%~ END %]
-  </ul>
 [%~ ELSIF confirm_action == 'd_admin' && d_admin == 'delete' ~%]
   <input type="hidden" name="d_admin" value="[% d_admin %]" />
 [%~ ELSIF confirm_action == 'd_delete' ~%]
@@ -328,6 +340,14 @@
   [% FOREACH l = selected_lists ~%]
     <input type="hidden" name="selected_lists" value="[% l %]" />
   [%~ END %]
+[%~ ELSIF confirm_action == 'reject' ~%]
+  [% FOREACH i = id ~%]
+    <input type="hidden" name="id" value="[% i %]" />
+  [%~ END %]
+  <input type="hidden" name="quiet" value="[% quiet %]" />
+  <input type="hidden" name="message_template" value="[% message_template %]" />
+  <input type="hidden" name="blacklist" value="[% blacklist %]" />
+  <input type="hidden" name="signal_spam" value="[% signal_spam %]" />
 [%~ ELSIF confirm_action == 'remove_arc' ~%]
   <input type="hidden" name="yyyy" value="[% yyyy %]" />
   <input type="hidden" name="month" value="[% month %]" />
@@ -384,6 +404,24 @@
     [%~ END %]
     </div>
   [%~ END %]
+[%~ ELSIF confirm_action == 'distribute' || confirm_action == 'reject' ~%]
+  <div>
+    <input class="MainMenuLinks" type="submit"
+      id="response_action_confirm" name="response_action_confirm"
+      value="[%IF confirm_action == 'distribute' ~%]
+        [%|loc%]Distribute selected emails[%END%]
+      [%~ELSIF confirm_action == 'reject' ~%]
+        [%|loc%]Reject selected emails[%END%]
+      [%~END%]" />
+    <input class="MainMenuLinks" type="submit"
+      id="response_action_cancel" name="response_action_cancel"
+      value="[%|loc%]Cancel[%END%]" />
+  </div>
+  <div>
+    <a href="[% 'modindex' | url_rel([list]) %]">
+      [%|loc%]Review message(s) awaiting moderation[%END%]
+    </a>
+  </div>
 [%~ ELSE ~%]
   <div>
     <input class="MainMenuLinks" type="submit"
