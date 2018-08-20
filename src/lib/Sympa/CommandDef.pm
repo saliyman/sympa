@@ -60,7 +60,7 @@ our %comms = (
         cmd_format => 'DEL %s %s',
     },
     distribute => {
-        cmd_regexp => qr'dis|distribute'i,
+        cmd_regexp => qr'dis|dist|distribute'i,
         arg_regexp => qr'(\S+)\s+(\w+)\s*\z',
         arg_keys   => [qw(localpart authkey)],
         cmd_format => 'DISTRIBUTE %s %s',
