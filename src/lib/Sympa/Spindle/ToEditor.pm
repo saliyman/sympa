@@ -8,6 +8,9 @@
 # Copyright (c) 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005,
 # 2006, 2007, 2008, 2009, 2010, 2011 Comite Reseau des Universites
 # Copyright (c) 2011, 2012, 2013, 2014, 2015, 2016, 2017 GIP RENATER
+# Copyright 2018 The Sympa Community. See the AUTHORS.md file at the
+# top-level directory of this distribution and at
+# <https://github.com/sympa-community/sympa.git>.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -47,7 +50,7 @@ sub _twist {
         || $self->{distributed_by}
         || $message->{sender};
 
-    unless (_send_confirm_to_editor($message, 'smtp')) {
+    unless (_send_confirm_to_editor($message)) {
         $log->syslog(
             'err',
             'Failed to send moderation request of %s from %s for list %s to editor(s)',
@@ -135,7 +138,6 @@ sub _send_confirm_to_editor {
         'msg_from'       => $message->{'sender'},
         'subject'        => $message->{'decoded_subject'},
         'spam_status'    => $message->{'spam_status'},
-        'method'         => 'smtp',
         'request_topic'  => $list->is_there_msg_topic,
         'auto_submitted' => 'auto-generated',
     };
@@ -164,7 +166,7 @@ sub _send_confirm_to_editor {
         # Ensure 1 second elapsed since last message.
         unless (
             Sympa::send_file(
-                $list, 'moderate', $recipient, $param, date => time + 1
+                $list, 'forward', $recipient, $param, date => time + 1
             )
         ) {
             return undef;

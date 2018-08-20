@@ -1,0 +1,27 @@
+[%# forward.tt2 ~%]
+From: [% fromlist %]
+To: [% list.name %]-editor@[% domain %]
+Subject: [% FILTER qencode %][%|loc(list.name,msg_from)%]Message for list %1 from %2 to be approved[%END%][%END%]
+Reply-To: [% conf.email %]@[% domain %]
+Content-Type: multipart/mixed; boundary="[% boundary %]"
+
+--[% boundary %]
+Content-Disposition: inline
+
+[%|loc(list.name,msg_from)%]One new message for list %1 from %2 arrived. [%END%]
+
+[% IF spam_status == 'spam' -%]
+[%|loc%]This message has been tagged as spam.[%END%]
+
+[% END -%]
+
+--[% boundary %]
+Content-Type: message/rfc822
+Content-Transfer-Encoding: 8bit
+Content-Disposition: inline
+X-Sympa-Attach: yes
+
+[%# Message is attached here. #%]
+
+--[% boundary %]--
+

@@ -344,6 +344,7 @@ nobase_default_DATA = \
 	mail_tt2/expire_deletion.tt2 \
 	mail_tt2/expire_warning1.tt2 \
 	mail_tt2/expire_warning2.tt2 \
+	mail_tt2/forward.tt2 \
 	mail_tt2/get_archive.tt2 \
 	mail_tt2/global_remind.tt2 \
 	mail_tt2/helpfile.tt2 \
