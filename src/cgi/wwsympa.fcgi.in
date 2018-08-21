@@ -7830,150 +7830,80 @@ sub do_d_reject_shared {
 #  Moderation of messages : rejects messages and notifies
 #  their senders. If in{'blacklist'} add sender to list blacklist
 #
-# IN : -
+# IN : - id of message to distribute.
+#        Note: idspam parameter was deprecated.
 #
 # OUT : 'loginrequest' | 'modindex' | undef
 #
 ####################################################
 sub do_reject {
-
-    # toggle selection javascript have a distinction of spam and ham base on
-    # the checkbox name . It is not useful here so join id list and idspam
-    # list.
-    $in{'id'} .= ',' . $in{'idspam'} if ($in{'idspam'});
-    $in{'id'} =~ s/^,//;
-    $in{'id'} =~ s/\0/,/g;
-
-    ## The quiet information might either be provided by the 'quiet' variable
-    ## or by the 'quiet' value of the 'message_template' variable
-    if ($in{'message_template'} eq 'quiet') {
-        $in{'quiet'} = 1;
-        delete $in{'message_template'};
-    }
-    if ($in{'blacklist'}) {
-        $in{'quiet'} = 1;
-    }
-
     wwslog('info', '(%s)', $in{'id'});
-    my $file;
 
-    $param->{'blacklist_added'}   = 0;
-    $param->{'blacklist_ignored'} = 0;
-    foreach my $id (split(/,/, $in{'id'})) {
-        next unless $id and $id =~ /\A\w+\z/;
+    my $sender = $param->{'user'}{'email'};
 
-        my $spool_mod =
-            Sympa::Spool::Moderation->new(context => $list, authkey => $id);
-        my ($message, $handle);
-        while (1) {
-            ($message, $handle) = $spool_mod->next;
-            last unless $handle;
-            last if $message and not $message->{validated};
-        }
-
-        unless ($message) {
-            Sympa::WWW::Report::reject_report_web('user', 'already_moderated',
-                {key => $id, listname => $list->{'name'}},
-                $param->{'action'});
-            wwslog('err', 'Unable to get message with <%s> for list %s',
-                $id, $list);
-            web_db_log(
-                {   'parameters' => $id,
-                    'status'     => 'error',
-                    'error_type' => 'internal'
-                }
-            );
-            next;
-        }
-
-        #  extract sender address is needed to report reject to sender and in
-        #  case the sender is to be added to the blacklist
-        if (($in{'quiet'} ne '1') || ($in{'blacklist'})) {
-            my $rejected_sender = $message->{'sender'};
-            if ($rejected_sender) {
-                unless ($in{'message_template'} eq 'reject_quiet') {
-                    my %context;
-                    $context{'subject'}       = $message->{'decoded_subject'};
-                    $context{'rejected_by'}   = $param->{'user'}{'email'};
-                    $context{'template_used'} = $in{'message_template'};
-                    unless (
-                        Sympa::send_file(
-                            $list,            $in{'message_template'},  #FIXME
-                            $rejected_sender, \%context
-                        )
-                        ) {
-                        wwslog('notice',
-                            "Unable to send template $in{'message_template'} to $rejected_sender"
-                        );
-                    }
-                }
-                if ($in{'blacklist'}) {
-                    if (_add_in_blacklist($rejected_sender, $robot, $list)) {
-                        $param->{'blacklist_added'} += 1;
-                        wwslog('info',
-                            "added $rejected_sender to $list->{'name'} blacklist"
-                        );
-                    } else {
-                        wwslog('notice',
-                            "Unable to add $rejected_sender to $list->{'name'} blacklist"
-                        );
-                        $param->{'blacklist_ignored'} += 0;
-                    }
-                }
-            } else {
-                $log->syslog(
-                    'err',
-                    'No sender found for message %s.  Unable to use her address to add to blacklist or send notification',
-                    $message
-                );
-            }
-        }
-
-        if (   ($in{'signal_spam'})
-            && ($Conf::Conf{'reporting_spam_script_path'} ne '')) {
-            if (-x $Conf::Conf{'reporting_spam_script_path'}) {
-                unless (
-                    open(SCRIPT, "|$Conf::Conf{'reporting_spam_script_path'}"
-                    )
-                    ) {
-                    $log->syslog('err',
-                        "could not execute $Conf::Conf{'reporting_spam_script_path'}"
-                    );
-                }
-                # Sending encrypted form in case a crypted message would be
-                # sent by error.
-                print SCRIPT $message->as_string;
-
-                if (close(SCRIPT)) {
-                    $log->syslog('info',
-                        "message $file reported as spam by $param->{'user'}{'email'}"
-                    );
-                } else {
-                    $log->syslog('err',
-                        "could not report message $file as spam (close failed)"
-                    );
-                }
-            } else {
-                $log->syslog('err',
-                    "ignoring parameter reporting_spam_script_path, value $Conf::Conf{'reporting_spam_script_path'} because not an executable script"
-                );
-            }
-        }
-
-        $spool_mod->remove($handle) and $spool_mod->html_remove($message);
-
-    }
-    web_db_log(
-        {   'parameters' => $in{'id'},
-            'status'     => 'success'
-        }
+    my @ids = split /\0/, $in{'id'};
+    $param->{'id'} = [@ids];
+    # The quiet information might either be provided by the 'quiet' variable
+    # or by the 'quiet' value of the 'message_template' variable.
+    $param->{'quiet'} = (
+               $in{'quiet'}
+            or $in{'message_template'} eq 'quiet'  # Compat.
+            or $in{'message_template'} eq 'reject_quiet'
+            or $in{'blacklist'}
     );
+    if ($in{'message_template'}) {
+        $param->{'message_template'} = $in{'message_template'}
+            unless $in{'message_template'} eq 'quiet'
+            or $in{'message_template'} eq 'reject_quiet';
+    }
+    $param->{'blacklist'}        = !!$in{'blacklist'};
+    $param->{'signal_spam'}      = !!$in{'signal_spam'};
 
-    web_db_stat_log();
+    # Action confirmed?
+    my $next_action = $session->confirm_action(
+        $in{'action'}, $in{'response_action'},
+        arg => join(',', sort @ids),
+        previous_action => ($in{'previous_action'} || 'modindex')
+    );
+    return $next_action unless $next_action eq '1';
 
-    Sympa::WWW::Report::notice_report_web('performed', {}, $param->{'action'});
+    my $spindle = Sympa::Spindle::ProcessRequest->new(
+        context => $list,
+        action  => 'reject',
+        sender  => $sender,
 
-    return 'modindex';
+        authkey            => [@ids],
+        quiet              => $param->{'quiet'},
+        reject_template    => $param->{'message_template'},
+        reject_blacklist   => $param->{'blacklist'},
+        reject_signal_spam => $param->{'signal_spam'},
+
+        scenario_context => {
+            sender      => $sender,
+            remote_host => $param->{'remote_host'},
+            remote_addr => $param->{'remote_addr'},
+        },
+    );
+    unless ($spindle and $spindle->spin) {
+        wwslog('err', 'Failed to reject message');
+        return undef;
+    }
+
+    foreach my $report (@{$spindle->{stash} || []}) {
+        if ($report->[1] eq 'notice') {
+            Sympa::WWW::Report::notice_report_web(@{$report}[2, 3],
+                $param->{'action'});
+        } else {
+            Sympa::WWW::Report::reject_report_web(@{$report}[1 .. 3],
+                $param->{action});
+        }
+    }
+    unless (@{$spindle->{stash} || []}) {
+        Sympa::WWW::Report::notice_report_web('performed', {}, $param->{'action'});
+        web_db_log({'parameters' => $in{'id'}, 'status' => 'success'});
+    }
+
+    return $in{'previous_action'} || 'modindex';
 }
 
 ####################################################

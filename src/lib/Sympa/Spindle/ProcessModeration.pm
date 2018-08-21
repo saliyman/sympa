@@ -8,8 +8,8 @@
 # Copyright (c) 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005,
 # 2006, 2007, 2008, 2009, 2010, 2011 Comite Reseau des Universites
 # Copyright (c) 2011, 2012, 2013, 2014, 2015, 2016, 2017 GIP RENATER
-# Copyright 2017 The Sympa Community. See the AUTHORS.md file at the top-level
-# directory of this distribution and at
+# Copyright 2017, 2018 The Sympa Community. See the AUTHORS.md file at the
+# top-level directory of this distribution and at
 # <https://github.com/sympa-community/sympa.git>.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -35,10 +35,12 @@ use Conf;
 use Sympa::Language;
 use Sympa::Log;
 use Sympa::Tools::Data;
+use Sympa::Tools::Text;
 
 use base qw(Sympa::Spindle);
 
-my $log = Sympa::Log->instance;
+my $language = Sympa::Language->instance;
+my $log      = Sympa::Log->instance;
 
 use constant _distaff => 'Sympa::Spool::Moderation';
 
@@ -116,44 +118,162 @@ sub _reject {
     }
     my $list = $message->{context};
 
-    Sympa::Language->instance->set_lang(
+    $language->push_lang(
         $list->{'admin'}{'lang'},
         Conf::get_robot_conf($list->{'domain'}, 'lang'),
         $Conf::Conf{'lang'}, 'en'
     );
 
     if ($message->{sender}) {
-        my $param = {
-            subject     => $message->{decoded_subject},
-            rejected_by => $self->{rejected_by},
-            #editor_msg_body =>
-            #    ($editor_msg ? $editor_msg->body_as_string : undef),
-        };
-        $log->syslog('debug2', 'Message %s by %s rejected sender %s',
-            $param->{subject}, $param->{rejected_by}, $message->{sender});
-
         # Notify author of message.
-        unless ($self->{quiet}) {
-            Sympa::send_file($list, 'reject', $message->{sender}, $param)
+        if (not $self->{quiet} or $self->{reject_blacklist}) {
+            my $reject_template = $self->{reject_template}
+                if $self->{reject_template}
+                and $self->{reject_template} =~ /\A[-\w]+\z/;
+
+            my $param = {
+                subject       => $message->{decoded_subject},
+                rejected_by   => $self->{rejected_by},
+                template_used => $reject_template,
+            };
+            Sympa::send_file($list, ($reject_template || 'reject'),
+                $message->{sender}, $param)
                 or Sympa::send_dsn($list, $message, {}, '5.3.0');    #FIXME
         }
 
-        # Notify list moderator.
-        # Ensure 1 second elapsed since last message.
-        Sympa::send_file(
-            $list,
-            'message_report',
-            $self->{rejected_by},
-            {   type           => 'success',            # Compat. <=6.2.12.
-                entry          => 'message_rejected',
-                auto_submitted => 'auto-replied',
-                key            => $message->{authkey}
-            },
-            date => time + 1
+        # Add to blacklist if necessary.
+        if ($self->{reject_blacklist}) {
+            my $status = _add_in_blacklist($list, $message->{sender});
+            #FIXME: add_stash() acording to $status
+            if ($status) {
+                $log->syslog('info', 'Added %s to %s blacklist',
+                    $message->{sender}, $list);
+            } elsif (defined $status) {                              # 0
+                $log->syslog('info', '%s already in %s blacklist',
+                    $message->{sender}, $list);
+            } else {                                                 # undef
+                $log->syslog('notice', 'Unable to add %s to %s blacklist',
+                    $message->{sender}, $list);
+            }
+        }
+    } else {
+        $log->syslog(
+            'err',
+            'No sender found for message %s. Unable to use their address to add to blacklist or send notification',
+            $message
         );
     }
 
+    _signal_spam($self, $message) if $self->{reject_signal_spam};
+
+    # Notify list moderator.
+    # Ensure 1 second elapsed since last message.
+    Sympa::send_file(
+        $list,
+        'message_report',
+        $self->{rejected_by},
+        {   type           => 'success',            # Compat. <=6.2.12.
+            entry          => 'message_rejected',
+            auto_submitted => 'auto-replied',
+            key            => $message->{authkey}
+        },
+        date => time + 1
+    );
+
+    $log->add_stat(
+        robot     => $list->{'domain'},
+        list      => $list->{'name'},
+        operation => 'reject',
+        mail      => $self->{rejected_by},
+        client    => $self->{scenario_context}->{remote_addr}
+    );
+
+    $language->pop_lang;
+
     1;
+}
+
+#FIXME:robot blacklist not yet availible.
+# Old name: _add_in_blacklist() in wwsympa.fcgi.
+sub _add_in_blacklist {
+    $log->syslog('debug3', '(%s, %s)', @_);
+    my $list  = shift;
+    my $entry = shift;
+
+    my $email = Sympa::Tools::Text::canonic_email($entry);
+    unless ($email and Sympa::Tools::Text::valid_email($email)) {
+        $log->syslog('err', 'Incorrect parameter %s', $entry);
+        return undef;
+    }
+
+    my $dir = $list->{'dir'} . '/search_filters';
+    unless (-d $dir or mkdir $dir, 0755) {
+        $log->syslog('err', 'Unable to create dir %s: %m', $dir);
+        return undef;
+    }
+    my $file = $dir . '/blacklist.txt';
+
+    my $lock_fh = Sympa::LockedFile->new($file, 5, '+>>');
+    unless ($lock_fh) {
+        $log->syslog('err', 'Could not create new lock for %s', $file);
+        return undef;
+    }
+
+    seek $lock_fh, 0, 0;
+    my $nl = 0;
+    while (<$lock_fh>) {
+        $nl = /\n$/ ? 1 : 0;
+        next if /\A\s*\z/ or /\A[#;]/;
+
+        my $regexp = $_;
+        chomp $regexp;
+        $regexp =~ s/([^\s\w\x80-\xFF])/\\$1/g;
+        $regexp =~ s/\\[*]/.*/g;
+        if ($email =~ /\A$regexp\z/i) {
+            $lock_fh->close;
+            return 0;
+        }
+    }
+
+    seek $lock_fh, 0, 2;
+    print $lock_fh "\n" unless $nl;
+    printf $lock_fh "%s\n", $email;
+
+    close $lock_fh;
+
+    1;
+}
+
+# Old name: (part of) do_reject() in wwsympa.fcgi.
+sub _signal_spam {
+    my $self    = shift;
+    my $message = shift;
+
+    my $list = $message->{context};
+    my $script =
+        Conf::get_robot_conf($list->{'domain'}, 'reporting_spam_script_path');
+    return unless $self->{'reject_signal_spam'} and $script;
+
+    my $pipeout;
+    unless (-x $script) {
+        $log->syslog(
+            'err',
+            'Ignoring parameter reporting_spam_script_path, value %s because not an executable script',
+            $script
+        );
+    } elsif (open $pipeout, '|-', $script) {
+        # Sending encrypted form in case a crypted message would be
+        # sent by error.
+        print $pipeout $message->as_string(original => 1);
+        if (close $pipeout) {
+            $log->syslog('info', 'Message %s reported as spam', $message);
+        } else {
+            $log->syslog('err', 'Could not report message %s as spam: %m',
+                $message);
+        }
+    } else {
+        $log->syslog('err', 'Could not execute %s: %m', $script);
+    }
 }
 
 sub _distribute {

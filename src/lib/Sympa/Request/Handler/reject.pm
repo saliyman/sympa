@@ -8,6 +8,9 @@
 # Copyright (c) 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005,
 # 2006, 2007, 2008, 2009, 2010, 2011 Comite Reseau des Universites
 # Copyright (c) 2011, 2012, 2013, 2014, 2015, 2016, 2017 GIP RENATER
+# Copyright 2018 The Sympa Community. See the AUTHORS.md file at the
+# top-level directory of this distribution and at
+# <https://github.com/sympa-community/sympa.git>.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -51,17 +54,23 @@ sub _twist {
     my $key = $request->{authkey};
 
     my $spindle = Sympa::Spindle::ProcessModeration->new(
-        rejected_by => $sender,
-        context     => $list,
-        authkey     => $key,
-        quiet       => $request->{quiet}
+        rejected_by        => $sender,
+        context            => $list,
+        authkey            => $key,
+        quiet              => $request->{quiet},
+        reject_template    => $request->{'reject_template'},
+        reject_blacklist   => $request->{'reject_blacklist'},
+        reject_signal_spam => $request->{'reject_signal_spam'},
+
+        stash => $self->{stash},
     );
 
     unless ($spindle and $spindle->spin) {    # No message
-        $log->syslog('info', 'REJECT %s %s from %s refused, auth failed',
-            $list->{'name'}, $key, $sender);
+        $log->syslog('info',
+            'REJECT: Unable to find message with <%s> for list %s',
+            $key, $list);
         $self->add_stash($request, 'user', 'already_moderated',
-            {key => $key});
+            {key => $key, listname => $list->{'name'}});
         return undef;
     } elsif ($spindle->{finish} and $spindle->{finish} eq 'success') {
         $log->syslog(
