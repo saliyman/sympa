@@ -8,6 +8,9 @@
 # Copyright (c) 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005,
 # 2006, 2007, 2008, 2009, 2010, 2011 Comite Reseau des Universites
 # Copyright (c) 2011, 2012, 2013, 2014, 2015, 2016, 2017 GIP RENATER
+# Copyright 2018 The Sympa Community. See the AUTHORS.md file at the
+# top-level directory of this distribution and at
+# <https://github.com/sympa-community/sympa.git>.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -28,19 +31,87 @@ use strict;
 use warnings;
 
 use Conf;
+use Sympa::Tools::Text;
 
 use base qw(Sympa::Spool);
 
 sub _directories {
-    return {directory => $Conf::Conf{'queueauth'},};
+    return {
+        directory     => $Conf::Conf{'queueauth'},
+        bad_directory => $Conf::Conf{'queueauth'} . '/bad',
+    };
+}
+
+sub _filter {
+    my $self     = shift;
+    my $metadata = shift;
+
+    return 1 unless $metadata;
+
+    if ($metadata->{validated}) {
+        $metadata->{validated} =~ s/\A,//;
+        $metadata->{validated} = Sympa::Tools::Text::decode_filesystem_safe(
+            $metadata->{validated});
+    }
+
+    1;
+}
+
+sub _filter_pre {
+    my $self     = shift;
+    my $metadata = shift;
+
+    return 1 unless $metadata;
+
+    if ($metadata->{validated}) {
+        # Encode e-mail.
+        $metadata->{validated} = sprintf ',%s',
+            Sympa::Tools::Text::encode_filesystem_safe(
+            $metadata->{validated});
+    } else {
+        $metadata->{validated} = '';
+    }
+
+    if ($metadata->{quiet}) {
+        # Normalize.
+        $metadata->{quiet} = ',quiet';
+    } else {
+        $metadata->{quiet} = '';
+    }
+
+    1;
 }
 
 use constant _generator => 'Sympa::Message';
 
-use constant _marshal_format => '%s@%s_%s';
-use constant _marshal_keys   => [qw(localpart domainpart AUTHKEY)];
-use constant _marshal_regexp => qr{\A([^\s\@]+)\@([-.\w]+)_([\da-f]+)\z};
-use constant _store_key      => 'authkey';
+use constant _marshal_format => '%s@%s_%s%s%s';
+use constant _marshal_keys =>
+    [qw(localpart domainpart AUTHKEY validated quiet)];
+use constant _marshal_regexp =>
+    qr{\A([^\s\@]+)\@([-.\w]+)_([\da-f]+)(,[^,]+)?(,quiet)?\z};
+use constant _store_key => 'authkey';
+
+sub remove {
+    my $self    = shift;
+    my $handle  = shift;
+    my %options = @_;
+
+    if ($options{email}) {
+        return 1 if $handle->basename =~ /,\S+\z/;
+
+        my $enc_email = sprintf ',%s',
+            Sympa::Tools::Text::encode_filesystem_safe($options{email});
+        my $enc_quiet = $options{quiet} ? ',quiet' : '';
+        return $handle->rename(sprintf '%s/%s%s%s',
+            $self->{directory}, $handle->basename, $enc_email, $enc_quiet);
+    } else {
+        return $self->SUPER::remove($handle);
+    }
+}
+
+sub size {
+    scalar grep { !/,\S+\z/ } @{shift->_load || []};
+}
 
 1;
 __END__
@@ -62,6 +133,9 @@ Sympa::Spool::Held - Spool for held messages waiting for confirmation
       Sympa::Spool::Held->new(context => $list, authkey => $authkey);
   my ($message, $handle) = $spool->next;
 
+  $spool->remove($handle, email => $validator, quiet => 1);
+  $spool->remove($handle);
+
 =head1 DESCRIPTION
 
 L<Sympa::Spool::Held> implements the spool for held messages waiting for
@@ -80,9 +154,15 @@ See also L<Sympa::Spool/"Public methods">.
 If the pairs describing metadatas are specified,
 contents returned by next() are filtered by them.
 
-=item quarantine ( )
+=item remove ( $handle, [ email =E<gt> $email, [ quiet =E<gt> 1 ] ] )
 
-Does nothing.
+If email is specified, rename message file to add it as extension, instead of
+removing message file.
+Otherwise, removes message file.
+
+=item size ( )
+
+Returns number of messages in the spool except which have extension.
 
 =item store ( $message, [ original =E<gt> $original ] )
 
@@ -100,8 +180,13 @@ This class particularly gives following metadata:
 
 =item {authkey}
 
-Authentication key generated automatically
-when the message is stored to spool.
+Authentication (confirmation or moderation) key generated automatically
+when the message is stored into spool.
+
+=item {validated}
+
+Keeps an e-mail address of validator, if message has been renamed using
+remove() with option.
 
 =back
 
@@ -116,7 +201,7 @@ Following site configuration parameters in sympa.conf will be referred.
 Directory path of held message spool.
 
 Note:
-Named such by historical reason.
+Named such by historical reason (don't confuse with L<Sympa::Spool::Auth>).
 
 =back
 

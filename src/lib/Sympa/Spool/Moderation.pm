@@ -34,7 +34,7 @@ use Conf;
 use Sympa::Archive;    # for html_format()
 use Sympa::Tools::File;
 
-use base qw(Sympa::Spool::Held);
+use base qw(Sympa::Spool::Held);    # Derived class.
 
 sub _directories {
     return {
@@ -49,46 +49,13 @@ sub _filter {
     my $self     = shift;
     my $metadata = shift;
 
-    return 1 unless $metadata;
+    # Compat. <= 6.2.36.
+    $metadata->{validated} = 'nobody'
+        if $metadata
+        and $metadata->{validated}
+        and $metadata->{validated} eq '.distribute';
 
-    if ($metadata->{validated}) {
-        # Decode e-mail.
-        if ($metadata->{validated} eq '.distribute') {    # Compat. <= 6.2.36
-            $metadata->{validated} = 'nobody';
-        } else {
-            $metadata->{validated} =~ s/\A,//;
-            $metadata->{validated} =
-                Sympa::Tools::Text::decode_filesystem_safe(
-                $metadata->{validated});
-        }
-    }
-
-    1;
-}
-
-sub _filter_pre {
-    my $self     = shift;
-    my $metadata = shift;
-
-    return 1 unless $metadata;
-
-    if ($metadata->{validated}) {
-        # Encode e-mail.
-        $metadata->{validated} = sprintf ',%s',
-            Sympa::Tools::Text::encode_filesystem_safe(
-            $metadata->{validated});
-    } else {
-        $metadata->{validated} = '';
-    }
-
-    if ($metadata->{quiet}) {
-        # Normalize.
-        $metadata->{quiet} = ',quiet';
-    } else {
-        $metadata->{quiet} = '';
-    }
-
-    1;
+    return $self->SUPER::_filter($metadata);
 }
 
 sub _load {
@@ -101,9 +68,6 @@ sub _load {
     return [sort { $mtime{$a} <=> $mtime{$b} } @$metadatas];
 }
 
-use constant _marshal_format => '%s@%s_%s%s%s';
-use constant _marshal_keys =>
-    [qw(localpart domainpart AUTHKEY validated quiet)];
 use constant _marshal_regexp =>
     qr{\A([^\s\@]+)\@([-.\w]+)_([\da-f]+)(,[^,]+|[.]distribute)?(,quiet)?\z};
 
@@ -112,17 +76,8 @@ sub remove {
     my $handle  = shift;
     my %options = @_;
 
-    if ($options{email}) {
-        return 1 if $handle->basename =~ /(?:,\S+|[.]distribute)\z/;
-
-        my $enc_email = sprintf ',%s',
-            Sympa::Tools::Text::encode_filesystem_safe($options{email});
-        my $enc_quiet = $options{quiet} ? ',quiet' : '';
-        return $handle->rename(sprintf '%s/%s%s%s',
-            $self->{directory}, $handle->basename, $enc_email, $enc_quiet);
-    } else {
-        return $self->SUPER::remove($handle);
-    }
+    return 1 if $options{email} and $handle->basename =~ /[.]distribute\z/;
+    return $self->SUPER::remove($handle, %options);
 }
 
 sub html_remove {
@@ -183,8 +138,8 @@ Sympa::Spool::Moderation - Spool for held messages waiting for moderation
   my $spool = Sympa::Spool::Moderation->new;
   my $modkey = $spool->store($message);
 
-  my $spool =
-      Sympa::Spool::Moderation->new(context => $list, authkey => $modkey);
+  my $spool = Sympa::Spool::Moderation->new(
+        context => $list, authkey => $modkey);
   my ($message, $handle) = $spool->next;
 
   $spool->remove($handle, email => $validator, quiet => 1);
@@ -197,36 +152,8 @@ for moderation.
 
 =head2 Methods
 
-See also L<Sympa::Spool/"Public methods">.
-
-=over
-
-=item new ( [ context =E<gt> $list ], [ authkey =E<gt> $modkey ] )
-
-=item next ( [ no_lock =E<gt> 1 ] )
-
-If the pairs describing metadatas are specified,
-contents returned by next() are filtered by them.
-
-=item quarantine ( )
-
-Does nothing.
-
-=item remove ( $handle, [ email =E<gt> $email, [ quiet =E<gt> 1 ] ] )
-
-If email is specified, rename message file to add it as extension, instead of
-removing message file.
-Otherwise, removes message file.
-
-=item size ( )
-
-Returns number of messages in the spool except which have extension.
-
-=item store ( $message, [ original =E<gt> $original ] )
-
-If storing succeeded, returns moderation key.
-
-=back
+See L<Sympa::Spool::Held/"Methods"> and L<Sympa::Spool/"Public methods">
+for methods derived from them.
 
 =head2 Methods specific to this module
 
@@ -235,7 +162,7 @@ If storing succeeded, returns moderation key.
 =item html_remove ( $metadata )
 
 I<Instance method>.
-TBD.
+Removes cached HTML view of a message.
 
 Parameters:
 
@@ -279,23 +206,8 @@ None.
 
 =head2 Context and metadata
 
-See also L<Sympa::Spool/"Marshaling and unmarshaling metadata">.
-
-This class particularly gives following metadata:
-
-=over
-
-=item {authkey}
-
-Moderation key generated automatically
-when the message is stored into spool.
-
-=item {validated}
-
-Keeps a string representing extension, if message has been renamed using
-remove() with option.
-
-=back
+See L<Sympa::Spool:;:Held/"Context and metadata"> and
+L<Sympa::Spool/"Marshaling and unmarshaling metadata">.
 
 =head1 CONFIGURATION PARAMETERS
 
