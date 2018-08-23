@@ -292,7 +292,6 @@ nobase_default_DATA = \
 	web_tt2/rename_list_request.tt2 \
 	web_tt2/renewpasswd.tt2 \
 	web_tt2/requestpasswd.tt2 \
-	web_tt2/request_topic.tt2 \
 	web_tt2/reviewbouncing.tt2 \
 	web_tt2/review_family.tt2 \
 	web_tt2/review.tt2 \
