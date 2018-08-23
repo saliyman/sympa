@@ -83,16 +83,6 @@ $(function() {
     });
 });
 
-// check if rejecting quietly spams TODO
-function check_reject_spam(form,warningId) {
-	if(form.elements['iConfirm'].checked) return true;
-	
-	if(form.elements['message_template'].options[form.elements['message_template'].selectedIndex].value ==  'reject_quiet') return true;
-	
-	$('#' + warningId).show();
-	return false;
-}
-
 // To check at least one checkbox checked
 function checkbox_check_topic(form, warningId) {
 	if($(form).find('input[name^="topic_"]:checked').length) return true;
@@ -226,6 +216,7 @@ $(function() {
             else
                 $(selector).fadeTo('normal', 1);
         });
+        $(this).trigger('change');
     });
 });
 

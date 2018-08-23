@@ -15,15 +15,27 @@
 </p>
 <p>
   <button class="action" type="submit" name="action_reject"
-   value="[%|loc%]Reject[%END%]" data-tooltip
-   [% IF msg.value.spam_status == 'spam' ~%]
-     onclick="return check_reject_spam(reject_mail,'warningSpam')"
-     aria-haspopup="true"
-   [%~ END %]
-   title="[%|loc%]Reject[%END%]">
+   value="[%|loc%]Reject[%END%]" title="[%|loc%]Reject[%END%]" data-tooltip>
     <i class="fa fa-trash fa-lg"></i> [%|loc%]Reject[%END%]
   </button>
-  <select name="message_template">
+
+  [% IF msg.value.spam_status == 'spam' ~%]
+    <input type="checkbox" id="iConfirm" name="quiet" value="quiet"
+     class="fadeIfChecked" data-selector="#message_template"
+     checked="checked" />
+    <label for="iConfirm">
+      [%|loc%]quiet[%END%]
+      <a href="#" class="accordionButton"
+       data-selector="#help\.message_template" %]">
+      <i class="fa fa-question-circle" title="[%|loc%]Help[%END%]"></i>
+      </a>
+    </label>
+    <div id="help.message_template" class="secondary callout" data-closable>
+      <p>[%|loc%]You should reject spam messages quietly because the sender of a spam message is often spoofed, if you really want to send this notification, please confirm.[%END%]</p>
+    </div>
+  [%~ END %]
+
+  <select id="message_template" name="message_template">
   <option value="reject_quiet"
    [%~ IF msg.value.spam_status == 'spam' %] selected="selected"[% END ~%]
   >[%|loc %]No notification[%END%]</option>
@@ -56,12 +68,6 @@
     </button>
   </p>
 [% END %]
-  <div class="formError" style="display:none" id="warningSpam">
-    <p class="alert-box info text-left">
-    <input type="checkbox" name="iConfirm" value="1" />
-    [%|loc%]You should reject spam messages quietly because the sender of a spam message is often spoofed, if you really want to send this notification, please confirm.[%END%]
-    </p>
-  </div>
 </fieldset>
 </form>
 
