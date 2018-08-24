@@ -50,13 +50,14 @@ workflow of Sympa.  For more details see documentation on each class.
           v                   /               \
  Held => [ProcessHeld] ------+                 \
                                                 +-> [DistributeMessage]
-            *3 (DISTRIBUTE)                    /           \
-               (REJECT)       +--> (reject)   /             \
-                :            /               /               \
-                v           /               /                 \
- Moderation => [ProcessModeration]         /                   \
-                            \             /                     \
-                             +---------- +                       \
+            *3 (DISTRIBUTE)                    /          \
+               (REJECT)       +--> (reject)   /            \
+                :            /               /              \
+                :           +-> Moderation  /                \
+                v          /               /                  \
+ Moderation => [ProcessModeration]        /                    \
+                            \            /                      \
+                             +--------- +                        \
                                                                   \
                        +-------------------------------------------+
                         \

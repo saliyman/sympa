@@ -7912,8 +7912,8 @@ sub do_reject {
 #  Moderation of messages : distributes moderated
 #  messages and tag it in message moderation context
 #
-# IN : - id of message to distribute. This value can also be in idspam
-# parameter
+# IN : - id of message to distribute.
+#        Note: idspam parameter was deprecated.
 #
 # OUT : 'loginrequest' | 'modindex' | undef
 #
@@ -7921,113 +7921,71 @@ sub do_reject {
 sub do_distribute {
     wwslog('info', '(%s)', $in{'id'});
 
+    my $sender = $param->{'user'}{'email'};
+
     my @ids = split /\0/, $in{'id'};
     $param->{'id'} = [@ids];
-    my @topics = grep { defined $_ and length $_ } split /\0/, $in{'topic'};
+
+    my @available_topics = @{$list->{'admin'}{'msg_topic'} || []};
+    my @topics = grep {
+        my $topic = $_;
+        $topic and grep {$topic eq $_->{'name'}} @available_topics;
+    } split /\0/, $in{'topic'};
     $param->{'topic'} = [@topics];
     $param->{'topic_required'} =
         ($list->is_there_msg_topic and $list->is_msg_topic_tagging_required);
 
     # Action confirmed?
-    if ($param->{'topic_required'}) {
-        my $response_action =
-            (@topics # Topics are required.
-             or ($in{'response_action'} and $in{'response_action'} eq 'cancel'))
-            ? $in{'response_action'}
-            : undef;
-        my $next_action = $session->confirm_action(
-            $in{'action'}, $response_action,
-            arg => join(',', sort @ids),
-            previous_action => ($in{'previous_action'} || 'modindex')
-        );
-        return $next_action unless $next_action eq '1';
-    }
-
-    # Load message list.
-    my @mail_command = ();
-    foreach my $id (@ids) {    # QUIET DISTRIBUTE
-        next unless $id and $id =~ /\A\w+\z/;
-
-        my $spool_mod =
-            Sympa::Spool::Moderation->new(context => $list, authkey => $id);
-        my ($message, $handle);
-        while (1) {
-            ($message, $handle) = $spool_mod->next;
-            last unless $handle;
-            last if $message and not $message->{validated};
-        }
-
-        unless ($message) {
-            Sympa::WWW::Report::reject_report_web('user', 'already_moderated',
-                {key => $id, listname => $list->{'name'}},
-                $param->{'action'});
-            wwslog('err', 'Unable to find message with <%s> for list %s',
-                $id, $list);
-            web_db_log(
-                {   'parameters' => $id,
-                    'status'     => 'error',
-                    'error_type' => 'internal'
-                }
-            );
-            next;
-        }
-        push @mail_command,
-            sprintf('QUIET DISTRIBUTE %s %s', $list->{'name'}, $id);
-
-        # TAG
-        if (@topics) {
-            Sympa::Topic->new(topic => join(',', @topics), method => 'editor')
-                ->store($message);
-        }
-
-        $spool_mod->remove($handle, action => 'distribute');
-    }
-
-    # Commands are injected into incoming spool directly with "md5"
-    # authentication level.
-    my $cmd_message = Sympa::Message->new(
-        sprintf("\n\n%s\n", join("\n", @mail_command)),
-        context         => $robot,
-        envelope_sender => Sympa::get_address($robot, 'owner'),
-        sender          => $param->{'user'}{'email'},
-        md5_check       => 1,
-        message_id      => Sympa::unique_message_id($robot)
+    my $response_action = (
+        $param->{'topic_required'} and @topics    # Topics are required.
+            or not $param->{'topic_required'}
+            or $in{'response_action'} and $in{'response_action'} eq 'cancel'
+        )
+        ? $in{'response_action'}
+        : undef;
+    my $next_action = $session->confirm_action(
+        $in{'action'}, $response_action,
+        arg => join(',', sort @ids),
+        previous_action => ($in{'previous_action'} || 'modindex')
     );
-    $cmd_message->add_header('Content-Type', 'text/plain; Charset=utf-8');
+    return $next_action unless $next_action eq '1';
 
-    unless (Sympa::Spool::Incoming->new->store($cmd_message)) {
-        Sympa::WWW::Report::reject_report_web(
-            'intern',
-            'cannot_send_distribute',
-            {   'from'     => $param->{'user'}{'email'},
-                'listname' => $list->{'name'}
-            },
-            $param->{'action'},
-            $list,
-            $param->{'user'}{'email'},
-            $robot
-        );
-        wwslog('err', 'Failed to send message for list %s, id %s',
-            $list, $in{'id'});
-        web_db_log(
-            {   'parameters' => $in{'id'},
-                'status'     => 'error',
-                'error_type' => 'internal'
-            }
-        );
+    my $spindle = Sympa::Spindle::ProcessRequest->new(
+        context => $list,
+        action  => 'distribute',
+        sender  => $sender,
+
+        authkey => [@ids],
+        quiet   => 1,
+        topics  => join(',', @topics), # Scalar. cf. Sympa::Rquest::Collection
+
+        scenario_context => {
+            sender      => $sender,
+            remote_host => $param->{'remote_host'},
+            remote_addr => $param->{'remote_addr'},
+        },
+    );
+    unless ($spindle and $spindle->spin) {
+        wwslog('err', 'Failed to reject message');
         return undef;
     }
 
-    web_db_log(
-        {   'parameters' => $in{'id'},
-            'status'     => 'success'
+    foreach my $report (@{$spindle->{stash} || []}) {
+        if ($report->[1] eq 'notice') {
+            Sympa::WWW::Report::notice_report_web(@{$report}[2, 3],
+                $param->{'action'});
+        } else {
+            Sympa::WWW::Report::reject_report_web(@{$report}[1 .. 3],
+                $param->{action});
         }
-    );
+    }
+    unless (@{$spindle->{stash} || []}) {
+        Sympa::WWW::Report::notice_report_web('performed', {},
+            $param->{'action'});
+        web_db_log({'parameters' => $in{'id'}, 'status' => 'success'});
+    }
 
-    Sympa::WWW::Report::notice_report_web('performed_soon', {},
-        $param->{'action'});
-
-    return 'modindex';
+    return $in{'previous_action'} || 'modindex';
 }
 
 # Adds user from moderation index.

@@ -8,6 +8,9 @@
 # Copyright (c) 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005,
 # 2006, 2007, 2008, 2009, 2010, 2011 Comite Reseau des Universites
 # Copyright (c) 2011, 2012, 2013, 2014, 2015, 2016, 2017 GIP RENATER
+# Copyright 2018 The Sympa Community. See the AUTHORS.md file at the
+# top-level directory of this distribution and at
+# <https://github.com/sympa-community/sympa.git>.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -36,9 +39,56 @@ use base qw(Sympa::Spool::Held);
 sub _directories {
     return {
         directory           => $Conf::Conf{'queuemod'},
+        bad_directory       => $Conf::Conf{'queuemod'} . '/bad',
         html_root_directory => $Conf::Conf{'viewmail_dir'},
         html_base_directory => $Conf::Conf{'viewmail_dir'} . '/mod',
     };
+}
+
+sub _filter {
+    my $self     = shift;
+    my $metadata = shift;
+
+    return 1 unless $metadata;
+
+    if ($metadata->{validated}) {
+        # Decode e-mail.
+        if ($metadata->{validated} eq '.distribute') {    # Compat. <= 6.2.36
+            $metadata->{validated} = 'nobody';
+        } else {
+            $metadata->{validated} =~ s/\A,//;
+            $metadata->{validated} =
+                Sympa::Tools::Text::decode_filesystem_safe(
+                $metadata->{validated});
+        }
+    }
+
+    1;
+}
+
+sub _filter_pre {
+    my $self     = shift;
+    my $metadata = shift;
+
+    return 1 unless $metadata;
+
+    if ($metadata->{validated}) {
+        # Encode e-mail.
+        $metadata->{validated} = sprintf ',%s',
+            Sympa::Tools::Text::encode_filesystem_safe(
+            $metadata->{validated});
+    } else {
+        $metadata->{validated} = '';
+    }
+
+    if ($metadata->{quiet}) {
+        # Normalize.
+        $metadata->{quiet} = ',quiet';
+    } else {
+        $metadata->{quiet} = '';
+    }
+
+    1;
 }
 
 sub _load {
@@ -51,23 +101,25 @@ sub _load {
     return [sort { $mtime{$a} <=> $mtime{$b} } @$metadatas];
 }
 
-use constant _marshal_format => '%s@%s_%s%s';
-use constant _marshal_keys   => [qw(localpart domainpart AUTHKEY validated)];
+use constant _marshal_format => '%s@%s_%s%s%s';
+use constant _marshal_keys =>
+    [qw(localpart domainpart AUTHKEY validated quiet)];
 use constant _marshal_regexp =>
-    qr{\A([^\s\@]+)\@([-.\w]+)_([\da-f]+)(.distribute)?\z};
+    qr{\A([^\s\@]+)\@([-.\w]+)_([\da-f]+)(,[^,]+|[.]distribute)?(,quiet)?\z};
 
 sub remove {
     my $self    = shift;
     my $handle  = shift;
     my %options = @_;
 
-    if ($options{action}) {
-        die 'bug in logic.  Ask developer'
-            unless $options{action} eq 'distribute';
+    if ($options{email}) {
+        return 1 if $handle->basename =~ /(?:,\S+|[.]distribute)\z/;
 
-        return 1 if $handle->basename =~ /[.]distribute\z/;
-        return $handle->rename(
-            $self->{directory} . '/' . $handle->basename . '.distribute');
+        my $enc_email = sprintf ',%s',
+            Sympa::Tools::Text::encode_filesystem_safe($options{email});
+        my $enc_quiet = $options{quiet} ? ',quiet' : '';
+        return $handle->rename(sprintf '%s/%s%s%s',
+            $self->{directory}, $handle->basename, $enc_email, $enc_quiet);
     } else {
         return $self->SUPER::remove($handle);
     }
@@ -90,7 +142,7 @@ sub html_remove {
 }
 
 sub size {
-    scalar grep { !/[.]distribute\z/ } @{shift->_load || []};
+    scalar grep { !/(?:,\S+|[.]distribute)\z/ } @{shift->_load || []};
 }
 
 sub html_store {
@@ -135,7 +187,7 @@ Sympa::Spool::Moderation - Spool for held messages waiting for moderation
       Sympa::Spool::Moderation->new(context => $list, authkey => $modkey);
   my ($message, $handle) = $spool->next;
 
-  $spool->remove($handle, action => 'distribute');
+  $spool->remove($handle, email => $validator, quiet => 1);
   $spool->remove($handle);
 
 =head1 DESCRIPTION
@@ -160,9 +212,9 @@ contents returned by next() are filtered by them.
 
 Does nothing.
 
-=item remove ( $handle, [ action => 'distribute' ] )
+=item remove ( $handle, [ email =E<gt> $email, [ quiet =E<gt> 1 ] ] )
 
-If action is specified, rename message file to add it as extension, instead of
+If email is specified, rename message file to add it as extension, instead of
 removing message file.
 Otherwise, removes message file.
 

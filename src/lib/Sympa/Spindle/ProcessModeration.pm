@@ -36,6 +36,7 @@ use Sympa::Language;
 use Sympa::Log;
 use Sympa::Tools::Data;
 use Sympa::Tools::Text;
+use Sympa::Topic;
 
 use base qw(Sympa::Spindle);
 
@@ -50,9 +51,8 @@ sub _init {
 
     if ($state == 0) {
         die 'bug in logic. Ask developer'
-            unless ($self->{distributed_by} or $self->{rejected_by})
-            and $self->{context}
-            and $self->{authkey};
+            if ($self->{rejected_by} or $self->{validated_by})
+            and not($self->{context} and $self->{authkey});
     }
 
     1;
@@ -62,8 +62,12 @@ sub _on_garbage {
     my $self   = shift;
     my $handle = shift;
 
-    # Keep broken message and skip it.
-    $handle->close;
+    if ($self->{rejected_by} or $self->{validated_by}) {
+        # Keep broken message and skip it.
+        $handle->close;
+    } else {
+        $self->{distaff}->quarantine($handle);
+    }
 }
 
 sub _on_failure {
@@ -71,9 +75,14 @@ sub _on_failure {
     my $message = shift;
     my $handle  = shift;
 
-    # Keep failed message and exit.
-    $handle->close;
-    $self->{finish} = 'failure';
+    if ($self->{rejected_by} or $self->{validated_by}) {
+        # Keep failed message and exit.
+        $handle->close;
+        # Terminate processing.
+        $self->{finish} = 'failure';
+    } else {
+        $self->{distaff}->quarantine($handle);
+    }
 }
 
 sub _on_success {
@@ -81,11 +90,26 @@ sub _on_success {
     my $message = shift;
     my $handle  = shift;
 
-    # Remove succeeded message and exit.
-    $self->SUPER::_on_success($message, $handle)
-        and $self->{distaff}->html_remove($message);
-
-    $self->{finish} = 'success';
+    if ($self->{rejected_by}) {
+        # Remove succeeded message and exit.
+        $self->{distaff}->remove($handle)
+            and $self->{distaff}->html_remove($message);
+        # Terminate processing.
+        $self->{finish} = 'success';
+    } elsif ($self->{validated_by}) {
+        # Add extension to be distributed later.
+        $self->{distaff}->remove(
+            $handle,
+            email => $self->{validated_by},
+            quiet => $self->{quiet}
+        );
+        # Terminate processing.
+        $self->{finish} = 'success';
+    } else {
+        # Remove succeeded message, and continue processing.
+        $self->{distaff}->remove($handle)
+            and $self->{distaff}->html_remove($message);
+    }
 }
 
 sub _twist {
@@ -94,6 +118,8 @@ sub _twist {
 
     if ($self->{rejected_by}) {
         return _reject($self, $message);
+    } elsif ($self->{validated_by}) {
+        return _validate($self, $message);
     } else {
         return _distribute($self, $message);
     }
@@ -276,9 +302,44 @@ sub _signal_spam {
     }
 }
 
+sub _validate {
+    my $self    = shift;
+    my $message = shift;
+
+    # Messages marked validated should not be validated again.
+    return 0 if $message->{validated};
+
+    unless (ref $message->{context} eq 'Sympa::List') {
+        $log->syslog('notice', 'Unknown list %s', $message->{localpart});
+        #FIXME: use add_stash().
+        Sympa::send_dsn($message->{context} || '*', $message, {}, '5.1.1');
+        return undef;
+    }
+
+    # Register topics if specified.
+    if ($self->{topics}) {
+        Sympa::Topic->new(topic => $self->{topics}, method => 'editor')
+            ->store($message);
+    }
+
+    1;    # See also _on_success().
+}
+
 sub _distribute {
     my $self    = shift;
     my $message = shift;
+
+    # Messages _not_ marked validated should not be distributed.
+    return 0 unless $message->{validated};
+
+    my $distributed_by =
+        Sympa::Tools::Text::canonic_email($message->{validated});
+    # Compat. <= 6.2.36.
+    $distributed_by = Sympa::get_address($message->{context}, 'editor')
+        unless Sympa::Tools::Text::valid_email($distributed_by);
+    # Overwrite attributes.
+    $self->{distributed_by} = $distributed_by;
+    $self->{quiet} ||= !!$message->{quiet};
 
     # Decrpyt message.
     # If encrypted, it will be re-encrypted by succeeding processes.
@@ -294,7 +355,7 @@ sub _distribute {
     }
     my $list = $message->{context};
 
-    Sympa::Language->instance->set_lang(
+    $language->set_lang(
         $list->{'admin'}{'lang'},
         Conf::get_robot_conf($list->{'domain'}, 'lang'),
         $Conf::Conf{'lang'}, 'en'
@@ -310,12 +371,12 @@ sub _distribute {
         'editor_validated_messages');
 
     # Notify author of message.
-    $message->{envelope_sender} = $message->{sender};
     unless ($self->{quiet}) {
+        $message->{envelope_sender} = $message->{sender};
         Sympa::send_dsn($message->{context}, $message, {}, '2.1.5');
+        $message->{envelope_sender} = $self->{distributed_by};
     }
 
-    $message->{envelope_sender} = $self->{distributed_by};
     return ['Sympa::Spindle::DistributeMessage'];
 }
 
@@ -331,10 +392,14 @@ Sympa::Spindle::ProcessModeration - Workflow of message moderation
 =head1 SYNOPSIS
 
   use Sympa::Spindle::ProcessModeration;
-
+  
   my $spindle = Sympa::Spindle::ProcessModeration->new(
-      distributed_by => $email, context => $robot, authkey => $key);
+      rejected_by => $email, context => $robot, authkey => $key);
+  my $spindle = Sympa::Spindle::ProcessModeration->new(
+      validated_by => $email, context => $robot, authkey => $key);
   $spindle->spin;
+  
+  my $spindle = Sympa::Spindle::ProcessModeration->new->spin;
 
 =head1 DESCRIPTION
 
@@ -342,10 +407,14 @@ L<Sympa::Spindle::ProcessModeration> defines workflow for moderation of
 messages.
 
 When spin() method is invoked, it reads a message in moderation spool and
-distribute or reject it.
-Either distribution or rejection failed or not, spin() will terminate
-processing.
-Failed message will be kept in spool and wait for moderation again.
+reject, validate or distribute it.
+
+Either validation or rejection failed or not, spin() will terminate
+processing.  In these cases
+failed message will be kept in spool and wait for moderation again.
+
+If distribution mode is specified, it reads messages in moderation spool
+and distribute validated ones of them.
 
 =head2 Public methods
 
@@ -353,20 +422,34 @@ See also L<Sympa::Spindle/"Public methods">.
 
 =over
 
-=item new ( distributed_by =E<gt> $email | rejected_by =E<gt> $email,
+=item new ( rejected_by =E<gt> $email,
 context =E<gt> $context, authkey =E<gt> $key,
+[ reject_template =E<gt> $template ],
+[ reject_blacklist =E<gt> 1 ], [ reject_signal_spam =E<gt> 1 ],
 [ quiet =E<gt> 1 ] )
+
+=item new ( validated_by =E<gt> $email,
+context =E<gt> $context, authkey =E<gt> $key,
+[ topics =E<gt> $string ],
+[ quiet =E<gt> 1 ] )
+
+=item new ( )
 
 =item spin ( )
 
-new() must take following options:
+new() may take following options:
 
 =over
 
-=item distributed_by =E<gt> $email | rejected_by =E<gt> $email
+=item rejected_by =E<gt> $email
+
+=item validated_by =E<gt> $email
 
 E-mail address of the user who distributed or rejected the message.
 It is given by DISTRIBUTE or REJECT command.
+
+Note:
+C<distributed_by> parameter was deprecated on Sympa 6.2.37b.
 
 =item context =E<gt> $context
 
@@ -378,7 +461,7 @@ spool.
 =item quiet =E<gt> 1
 
 If this option is set, automatic replies reporting result of processing
-to the user (see L</"distributed_by"> and L</"rejected_by">) will not be sent.
+to the user (see L</"validated_by"> and L</"rejected_by">) will not be sent.
 
 =back
 
@@ -396,8 +479,8 @@ Instance of L<Sympa::Spool::Moderation> class.
 
 =item {finish}
 
-C<'success'> is set if processing succeeded.
-C<'failure'> is set if processing failed.
+C<'success'> is set if rejection or validation succeeded.
+C<'failure'> is set if rejection or validation failed.
 
 =back
 
@@ -410,5 +493,6 @@ L<Sympa::Spool::Moderation>.
 =head1 HISTORY
 
 L<Sympa::Spindle::ProcessModeration> appeared on Sympa 6.2.13.
+Validation mode was introduced on Sympa 6.2.37b.
 
 =cut
