@@ -49,9 +49,33 @@ our %comms = (
     },
     confirm => {
         cmd_regexp => qr'con|confirm'i,
-        arg_regexp => qr'(\w+)\s*\z',
-        arg_keys   => [qw(authkey)],
-        cmd_format => 'CONFIRM %s',
+        arg_regexp => qr'(?:(\S+)\s+)?(\w+)\s*\z',
+        arg_keys   => [qw(localpart authkey)],
+        cmd_format => 'CONFIRM %s %s',
+        filter     => sub {
+            my $r = shift;
+            return 1 if $r->{localpart};
+
+            # Compatibility: CONFIRM command didn't take localpart argument
+            # on 6.2.36 or earlier.  Take it from spool if any.
+            my ($message, $handle);
+            my $spool_held =
+                Sympa::Spool::Held->new(authkey => $r->{authkey});
+            while (1) {
+                ($message, $handle) =
+                    $spool_held->next(no_lock => 1, no_filter => 1);
+                last unless $handle;
+                last if $message and $message->{authkey} eq $r->{authkey};
+            }
+            return 0
+                unless $message and ref $message->{context} eq 'Sympa::List';
+
+            my $list = $message->{context};
+            @{$r}{qw(context localpart domainpart)} =
+                ($list, $list->{'name'}, $list->{'domain'});
+
+            1;
+        },
     },
     del => {
         cmd_regexp => qr'del|delete'i,

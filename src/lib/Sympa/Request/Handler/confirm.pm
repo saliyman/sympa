@@ -8,6 +8,9 @@
 # Copyright (c) 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005,
 # 2006, 2007, 2008, 2009, 2010, 2011 Comite Reseau des Universites
 # Copyright (c) 2011, 2012, 2013, 2014, 2015, 2016, 2017 GIP RENATER
+# Copyright 2018 The Sympa Community. See the AUTHORS.md file at the
+# top-level directory of this distribution and at
+# <https://github.com/sympa-community/sympa.git>.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -36,13 +39,15 @@ use base qw(Sympa::Request::Handler);
 my $log = Sympa::Log->instance;
 
 use constant _action_scenario => undef;
+use constant _context_class   => 'Sympa::List';
 
 # Old name: Sympa::Commands::confirm().
 sub _twist {
     my $self    = shift;
     my $request = shift;
 
-    my $robot  = $request->{context};
+    my $list   = $request->{context};
+    my $robot  = $list->{'domain'};
     my $sender = $request->{sender};
 
     my $key = $request->{authkey};
@@ -55,14 +60,21 @@ sub _twist {
     );
 
     unless ($spindle and $spindle->spin) {    # No message.
-        $log->syslog('info', 'CONFIRM %s from %s refused, auth failed',
-            $key, $sender);
+        $log->syslog('info',
+            'CONFIRM: Unable to find message with key <%s> for list %s',
+            $key, $list);
         $self->add_stash($request, 'user', 'already_confirmed',
-            {'key' => $key});
+            {key => $key});
         return undef;
     } elsif ($spindle->{finish} and $spindle->{finish} eq 'success') {
-        $log->syslog('info', 'CONFIRM %s from %s accepted (%.2f seconds)',
-            $key, $sender, Time::HiRes::time() - $self->{start_time});
+        $log->syslog(
+            'info',
+            'CONFIRM %s %s from %s accepted (%.2f seconds)',
+            $list->{'name'},
+            $key,
+            $sender,
+            Time::HiRes::time() - $self->{start_time}
+        );
         return 1;
     } else {
         return undef;
