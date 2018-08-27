@@ -1,25 +1,31 @@
 [%# send_auth.tt2 ~%]
 Reply-to: [% conf.email %]@[% domain %]
-[% IF request_topic -%]Subject: [% FILTER qencode %][%|loc(list.name)%]Tag your message for list %1[%END%][%END%]
-[% ELSE -%]Subject: [% FILTER qencode %]Confirm [% authkey %][%END%]
+[% IF request_topic -%]
+Subject: [% FILTER qencode %][%|loc(list.name)%]Tag your message for list %1[%END%][%END%]
+[% ELSE -%]
+Subject: [% FILTER qencode %]Confirm [% authkey %][%END%]
 [% END -%]
 Content-Type: multipart/mixed; boundary="[% boundary %]"
 
 --[% boundary %]
 Content-Disposition: inline
 
-[% IF request_topic -%][%|loc(list.name)%]List %1 allows you to tag your messages, using a set of defined topics. To tag the attached message go to the following page:[%END%]
+[% IF request_topic -%]
+[%|loc(list.name)%]List %1 allows you to tag your messages, using a set of defined topics. To tag the attached message go to the following page:[%END%]
 
-[% 'request_topic' | url_abs([list.name,authkey]) %]
-[%- ELSE -%][%|loc(list.name)%]To distribute the attached message in list %1, click on the URL:[%END%]
-
-[% | mailtourl({subject => "CONFIRM ${list.name} ${authkey}"}) ~%]
-  [% conf.email %]@[% domain %]
+[% 'confirm' | url_abs([list.name,authkey],{email=>user.email}) %]
+[%- ELSE -%]
+[%|loc(list.name)%]To distribute the attached message in list %1, click on the URL:[%END%]
+[% IF conf.wwsympa_url ~%]
+  <[% 'confirm' | url_abs([list.name,authkey],{email=>user.email}) %]>
+[%~ ELSE ~%]
+  <[% "${conf.email}@${domain}" | mailtourl({subject => "CONFIRM ${list.name} ${authkey}"}) %]>
 [%~ END %]
-
-[%|loc(conf.email,domain)%]Or send a message to %1@%2 with the following subject:[% END %]
+[% IF not conf.wwsympa_url -%]
+[%|loc(conf.email,domain)%]Or send a message to %1@%2 with the following subject:[%END%]
 CONFIRM [% list.name %] [% authkey %]
-[%- END -%]
+[% END -%]
+[%- END %]
 
 --[% boundary %]
 Content-Type: message/rfc822

@@ -53,10 +53,13 @@ sub _twist {
     my $key = $request->{authkey};
 
     my $spindle = Sympa::Spindle::ProcessHeld->new(
-        confirmed_by => $sender,
+        validated_by => $sender,
         context      => $robot,
         authkey      => $key,
-        quiet        => $request->{quiet}
+        quiet        => $request->{quiet},
+        topics       => $request->{topics},
+
+        stash => $self->{stash}
     );
 
     unless ($spindle and $spindle->spin) {    # No message.
@@ -75,6 +78,7 @@ sub _twist {
             $sender,
             Time::HiRes::time() - $self->{start_time}
         );
+        $self->add_stash($request, 'notice', 'performed_soon');
         return 1;
     } else {
         return undef;

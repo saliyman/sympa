@@ -76,7 +76,8 @@ sub remove {
     my $handle  = shift;
     my %options = @_;
 
-    return 1 if $options{email} and $handle->basename =~ /[.]distribute\z/;
+    return 1
+        if $options{validated_by} and $handle->basename =~ /[.]distribute\z/;
     return $self->SUPER::remove($handle, %options);
 }
 
@@ -142,7 +143,7 @@ Sympa::Spool::Moderation - Spool for held messages waiting for moderation
         context => $list, authkey => $modkey);
   my ($message, $handle) = $spool->next;
 
-  $spool->remove($handle, email => $validator, quiet => 1);
+  $spool->remove($handle, validated_by => $validator, quiet => 1);
   $spool->remove($handle);
 
 =head1 DESCRIPTION

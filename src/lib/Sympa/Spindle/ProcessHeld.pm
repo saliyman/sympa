@@ -8,8 +8,8 @@
 # Copyright (c) 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005,
 # 2006, 2007, 2008, 2009, 2010, 2011 Comite Reseau des Universites
 # Copyright (c) 2011, 2012, 2013, 2014, 2015, 2016, 2017 GIP RENATER
-# Copyright 2017 The Sympa Community. See the AUTHORS.md file at the top-level
-# directory of this distribution and at
+# Copyright 2017, 2018 The Sympa Community. See the AUTHORS.md file at the
+# top-level directory of this distribution and at
 # <https://github.com/sympa-community/sympa.git>.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -34,6 +34,7 @@ use Sympa;
 use Conf;
 use Sympa::Language;
 use Sympa::Log;
+use Sympa::Topic;
 
 use base qw(Sympa::Spindle);
 
@@ -47,9 +48,8 @@ sub _init {
 
     if ($state == 0) {
         die 'bug in logic. Ask developer'
-            unless $self->{confirmed_by}
-            and $self->{context}
-            and $self->{authkey};
+            if $self->{validated_by}
+            and not($self->{context} and $self->{authkey});
     }
 
     1;
@@ -59,8 +59,12 @@ sub _on_garbage {
     my $self   = shift;
     my $handle = shift;
 
-    # Keep broken message and skip it.
-    $handle->close;
+    if ($self->{validated_by}) {
+        # Keep broken message and skip it.
+        $handle->close;
+    } else {
+        $self->{distaff}->quarantine($handle);
+    }
 }
 
 sub _on_failure {
@@ -68,22 +72,82 @@ sub _on_failure {
     my $message = shift;
     my $handle  = shift;
 
-    # Keep failed message and exit.
-    $handle->close;
-    $self->{finish} = 'failure';
+    if ($self->{validated_by}) {
+        # Keep failed message and exit.
+        $handle->close;
+        # Terminate processing.
+        $self->{finish} = 'failure';
+    } else {
+        $self->{distaff}->quarantine($handle);
+    }
 }
 
 sub _on_success {
-    my $self = shift;
+    my $self    = shift;
+    my $message = shift;
+    my $handle  = shift;
 
-    # Remove succeeded message and exit.
-    $self->SUPER::_on_success(@_);
-    $self->{finish} = 'success';
+    if ($self->{validated_by}) {
+        # Add extension to be distributed later.
+        $self->{distaff}->remove(
+            $handle,
+            validated_by => $self->{validated_by},
+            quiet        => $self->{quiet}
+        );
+        # Terminate processing.
+        $self->{finish} = 'success';
+    } else {
+        # Remove succeeded message, and continue processing.
+        $self->{distaff}->remove($handle)
+            and $self->{distaff}->html_remove($message);
+    }
 }
 
 sub _twist {
     my $self    = shift;
     my $message = shift;
+
+    if ($self->{validated_by}) {
+        return _validate($self, $message);
+    } else {
+        return _distribute($self, $message);
+    }
+}
+
+sub _validate {
+    my $self    = shift;
+    my $message = shift;
+
+    # Messages marked validated should not be validated again.
+    return 0 if $message->{validated};
+
+    unless (ref $message->{context} eq 'Sympa::List') {
+        $log->syslog('notice', 'Unknown list %s', $message->{localpart});
+        #FIXME: use add_stash().
+        Sympa::send_dsn($message->{context} || '*', $message, {}, '5.1.1');
+        return undef;
+    }
+
+    # Register topics if specified.
+    if ($self->{topics}) {
+        Sympa::Topic->new(topic => $self->{topics}, method => 'sender')
+            ->store($message);
+    }
+
+    1;    # See also _on_success().
+}
+
+sub _distribute {
+    my $self    = shift;
+    my $message = shift;
+
+    # Messages _not_ marked validated should not be distributed.
+    return 0 unless $message->{validated};
+
+    # Overwrite attributes.
+    $self->{confirmed_by} =
+        Sympa::Tools::Text::canonic_email($message->{validated});
+    $self->{quiet} ||= !!$message->{quiet};
 
     # Decrpyt message.
     # If encrypted, it will be re-encrypted by succeeding processes.
@@ -123,8 +187,10 @@ Sympa::Spindle::ProcessHeld - Workflow of message confirmation
   use Sympa::Spindle::ProcessHeld;
 
   my $spindle = Sympa::Spindle::ProcessHeld->new(
-      confirmed_by => $email, context => $robot, authkey => $key);
+      validated_by => $email, context => $robot, authkey => $key);
   $spindle->spin;
+
+  Sympa::Spindle::ProcessHeld->new->spin;
 
 =head1 DESCRIPTION
 
@@ -132,10 +198,13 @@ L<Sympa::Spindle::ProcessHeld> defines workflow for confirmation of held
 messages.
 
 When spin() method is invoked, it reads a message in held message spool,
-authorizes it and distribute it if possible.
-Either authorization and distribution failed or not, spin() will terminate
+validates it if possible.
+Either validation failed or not, spin() will terminate
 processing.
 Failed message will be kept in spool and wait for confirmation again.
+
+If distribution mode is specified, it reads messages in held spool
+and authorize or distribute validated ones of them.
 
 =head2 Public methods
 
@@ -143,21 +212,27 @@ See also L<Sympa::Spindle/"Public methods">.
 
 =over
 
-=item new ( confirmed_by =E<gt> $email,
+=item new ( validated_by =E<gt> $email,
 context =E<gt> $context, authkey =E<gt> $key,
+[ topics =E<gt> $string ],
 [ quiet =E<gt> 1 ] )
+
+=item new ( )
 
 =item spin ( )
 
-new() must take following options:
+new() may take following options:
 
 =over
 
-=item confirmed_by =E<gt> $email
+=item validated_by =E<gt> $email
 
 E-mail address of the user who confirmed the message.
 It is given by CONFIRM command and
 used by L<Sympa::Spindle::AuthorizeMessage> to execute "send" scenario.
+
+Note:
+C<confirmed_by> parameter was deprecated on Sympa 6.2.37b.
 
 =item context =E<gt> $context
 
@@ -187,8 +262,8 @@ Instance of L<Sympa::Spool::Held> class.
 
 =item {finish}
 
-C<'success'> is set if processing succeeded.
-C<'failure'> is set if processing failed.
+C<'success'> is set if validation succeeded.
+C<'failure'> is set if validation failed.
 
 =back
 
@@ -201,5 +276,6 @@ L<Sympa::Spool::Held>.
 =head1 HISTORY
 
 L<Sympa::Spindle::ProcessHeld> appeared on Sympa 6.2.13.
+Validation mode was introduced on Sympa 6.2.37b.
 
 =cut

@@ -287,8 +287,7 @@ our %comm = (
     'load_cert'            => 'do_load_cert',
     'compose_mail'         => 'do_compose_mail',
     'send_mail'            => 'do_send_mail',
-    'request_topic'        => 'do_request_topic',
-    'tag_topic_by_sender'  => 'do_tag_topic_by_sender',
+    'confirm'              => 'do_confirm',
     'search_user'          => 'do_search_user',
     'set_lang'             => 'do_set_lang',
     'attach'               => 'do_attach',
@@ -345,9 +344,11 @@ my %comm_aliases = (
     'ignoresub'               => 'decl_add',
     'del_fromsig'             => 'auth_del',
     'rename_list'             => 'move_list',
+    'request_topic'           => 'confirm',
     'restore_list'            => 'open_list',
     'sigrequest'              => 'signoff',
     'subrequest'              => 'subscribe',
+    'tag_topic_by_sender'     => 'confirm',
 );
 
 my %auth_action = (
@@ -477,10 +478,9 @@ our %action_args = (
     'copy_template'   => ['list'],
     'edit_template'   => ['list'],
     'rss_request'     => ['list'],
-    'request_topic'       => ['list', 'authkey'],
-    'tag_topic_by_sender' => ['list'],
-    'ticket'              => ['ticket'],
-    'move_user'           => [],
+    'confirm'         => ['list', 'authkey'],
+    'ticket'          => ['ticket'],
+    'move_user'       => [],
     'manage_template' => ['subaction', 'list', 'message_template'],
     'rt_delete'       => ['list',          'message_template'],
     'rt_edit'         => ['list',          'message_template'],
@@ -606,7 +606,7 @@ our %required_args = (
         ['param.user.email', 'param.list', 'new_listname', 'new_robot'],
     'open_list'           => ['param.user.email', 'param.list'],
     'rename_list_request' => ['param.user.email', 'param.list'],
-    'request_topic'       => ['param.list',       'authkey'],
+    'confirm'             => ['param.list',       'authkey'],
     'resetbounce'  => ['param.list',       'param.user.email', 'email'],
     'review'          => ['param.list'],
     'review_family'   => ['param.user.email', 'family_name'],
@@ -641,7 +641,6 @@ our %required_args = (
     'suspend_request_action' => [],
     'show_exclude'           => ['param.list'],
     'sync_include'           => ['param.list',       'param.user.email'],
-    'tag_topic_by_sender'    => ['param.list'],
     'upload_pictures'        => ['param.user.email', 'param.list'],
     'view_template'          => ['webormail'],
     'viewbounce'             => ['param.list',       'email|file'],
@@ -15081,158 +15080,97 @@ sub do_send_mail {
     }
 }
 
-####################################################
-#  do_request_topic
-####################################################
-#  Web page for a sender to tag his mail in message
-#  topic context.
-#
-# IN : -
-#
-# OUT : '1' | 'loginrequest' | undef
-#
-####################################################
-sub do_request_topic {
-    wwslog('info', '(%s)', $in{'authkey'});
+# Tag a mail by its sender : tag the mail and send a command CONFIRM for it.
+# Old name: do_tag_topic_by_sender() and do_request_topic().
+sub do_confirm {
+    wwslog('info', '(%s, %s, email=%s)', $list, $in{'authkey'}, $in{'email'});
 
-    unless ($list->is_there_msg_topic()) {
-        Sympa::WWW::Report::reject_report_web('user', 'no_topic', {},
-            $param->{'action'}, $list);
-        wwslog('info', 'List without topic message');
-        return undef;
+    my $default_home = Conf::get_robot_conf($robot, 'default_home');
+
+    my $authkey = $in{'authkey'};
+    my $email   = Sympa::Tools::Text::canonic_email($in{'email'})
+        || $param->{'user'}{'email'};
+    unless ($email and Sympa::Tools::Text::valid_email($email)) {
+        return $in{'previous_action'} || $default_home;
     }
 
-    foreach my $top (@{$list->{'admin'}{'msg_topic'}}) {
-        if ($top->{'name'}) {
-            push(@{$param->{'available_topics'}}, $top);
-        }
-    }
-
-    $param->{'to'}      = Sympa::get_address($list);
-    $param->{'authkey'} = $in{'authkey'};
-
-    my $spool_held =
-        Sympa::Spool::Held->new(context => $list, authkey => $in{'authkey'});
     my ($message, $handle);
+    my $spool_held =
+        Sympa::Spool::Held->new(context => $list, authkey => $authkey);
     while (1) {
         ($message, $handle) = $spool_held->next(no_lock => 1);
         last unless $handle;
         last if $message;
     }
-    unless ($message) {
-        Sympa::WWW::Report::reject_report_web('intern', 'already_confirmed',
-            {key => $in{'authkey'}},
-            $param->{'action'}, $list, $param->{'user'}{'email'}, $robot);
-        wwslog('notice', 'Cannot get message with key <%s> for list %s',
-            $in{'authkey'}, $list);
-        return undef;
-    }
+    return ($in{'previous_action'} || $default_home) unless $message;
 
-    # headers will be encoded later.
+    my @available_topics = @{$list->{'admin'}{'msg_topic'} || []};
+    my @topics = grep {
+        my $topic = $_;
+        $topic and grep {$topic eq $_->{'name'}} @available_topics;
+    } split /\0/, $in{'topic'};
+
+    $param->{'authkey'}    = $authkey;
+    $param->{'email'}      = $email;
     $param->{'subject'}    = $message->{'decoded_subject'};
     $param->{'from'}       = $message->get_decoded_header('From');
     $param->{'date'}       = $message->get_decoded_header('Date');
     $param->{'message_id'} = $message->{'message_id'};
-    $param->{'body'}       = $message->get_plain_body;               #FIXME
+    $param->{'topic'}      = [@topics];
+    $param->{'topic_required'} =
+        ($list->is_there_msg_topic and $list->is_msg_topic_tagging_required);
 
-    $param->{'topic_required'} = $list->is_msg_topic_tagging_required();
+    # Action confirmed?
+    my $response_action = (
+        $param->{'topic_required'} and @topics    # Topics are required.
+            or not $param->{'topic_required'}
+            or $in{'response_action'} and $in{'response_action'} eq 'cancel'
+        )
+        ? $in{'response_action'}
+        : undef;
+    my $next_action = $session->confirm_action(
+        $in{'action'}, $response_action,
+        arg => $authkey,
+        previous_action => ($in{'previous_action'} || $default_home)
+    );
+    return $next_action unless $next_action eq '1';
 
-    return 1;
-}
+    my $spindle = Sympa::Spindle::ProcessRequest->new(
+        context => $list,
+        action  => 'confirm',
+        sender  => $email,
 
-####################################################
-#  do_tag_topic_by_sender
-####################################################
-#  Tag a mail by its sender : tag the mail and
-#  send a command CONFIRM for it
-#
-# IN : -
-#
-# OUT : 'loginrequest' | 'info' | undef
-#
-####################################################
-sub do_tag_topic_by_sender {
-    wwslog('info', '');
+        authkey => $authkey,
+        quiet   => 1,
+        topics  => join(',', @topics), # Scalar. cf. Sympa::Rquest::Collection
 
-    my $spool_held =
-        Sympa::Spool::Held->new(context => $list, authkey => $in{'authkey'});
-    my ($message, $handle);
-    while (1) {
-        ($message, $handle) = $spool_held->next(no_lock => 1);
-        last unless $handle;
-        last if $message;
-    }
-    unless ($message) {
-        Sympa::WWW::Report::reject_report_web('intern', 'already_confirmed',
-            {key => $in{'authkey'}},
-            $param->{'action'}, $list, $param->{'user'}{'email'}, $robot);
-        wwslog('info', 'cannot get message with key <%s> for list %s',
-            $in{'authkey'}, $list);
-        return undef;
-    }
-    my $sender = $message->{'sender'};
-
-    unless ($list->is_there_msg_topic()) {
-        Sympa::WWW::Report::reject_report_web('user', 'no_topic', {},
-            $param->{'action'}, $list);
-        wwslog('info', 'List without topic message');
+        scenario_context => {
+            sender      => $email,
+            remote_host => $param->{'remote_host'},
+            remote_addr => $param->{'remote_addr'},
+        },
+    );
+    unless ($spindle and $spindle->spin) {
+        wwslog('err', 'Failed to confirm message');
         return undef;
     }
 
-    my @msg_topics;
-    foreach my $msg_topic (@{$list->{'admin'}{'msg_topic'}}) {
-        my $var_name = "topic_" . "$msg_topic->{'name'}";
-        if ($in{"$var_name"}) {
-            push @msg_topics, $msg_topic->{'name'};
+    foreach my $report (@{$spindle->{stash} || []}) {
+        if ($report->[1] eq 'notice') {
+            Sympa::WWW::Report::notice_report_web(@{$report}[2, 3],
+                $param->{'action'});
+        } else {
+            Sympa::WWW::Report::reject_report_web(@{$report}[1 .. 3],
+                $param->{action});
         }
     }
-    my $list_topics = join(',', @msg_topics);
-
-    if (!$list_topics && $list->is_msg_topic_tagging_required()) {
-        Sympa::WWW::Report::reject_report_web('user', 'msg_topic_missing', {},
-            $param->{'action'}, $list);
-        wwslog('info', 'Message without topic but in a required list');
-        return undef;
+    unless (@{$spindle->{stash} || []}) {
+        Sympa::WWW::Report::notice_report_web('performed', {},
+            $param->{'action'});
+        web_db_log({'parameters' => $authkey, 'status' => 'success'});
     }
 
-    # TAG
-    Sympa::Topic->new(topic => $list_topics, method => 'sender')
-        ->store($message);
-
-    ## CONFIRM
-    # Commands are injected into incoming spool directly with "md5"
-    # authentication level.
-    my $time        = time;
-    my $cmd_message = Sympa::Message->new(
-        sprintf("\n\nQUIET CONFIRM %s\n", $in{'authkey'}),
-        context         => $robot,
-        envelope_sender => Sympa::get_address($robot, 'owner'),
-        sender          => $sender,
-        md5_check       => 1,
-        message_id      => sprintf('<%s@wwsympa>', $time)
-    );
-    $cmd_message->add_header('Content-Type', 'text/plain; Charset=utf-8');
-
-    unless (Sympa::Spool::Incoming->new->store($cmd_message)) {
-        Sympa::WWW::Report::reject_report_web(
-            'intern',
-            'cannot_send_mail',
-            {   'from'     => $param->{'user'}{'email'},
-                'listname' => $list->{'name'}
-            },
-            $param->{'action'},
-            $list,
-            $param->{'user'}{'email'},
-            $robot
-        );
-        wwslog('err', 'Failed to send message to comfirm message %s',
-            $message);
-        return undef;
-    }
-
-    Sympa::WWW::Report::notice_report_web('performed_soon', {},
-        $param->{'action'});
-    return 'info';
+    return $in{'previous_action'} || $default_home;
 }
 
 sub do_search_user {

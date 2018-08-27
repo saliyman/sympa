@@ -100,8 +100,8 @@ sub _on_success {
         # Add extension to be distributed later.
         $self->{distaff}->remove(
             $handle,
-            email => $self->{validated_by},
-            quiet => $self->{quiet}
+            validated_by => $self->{validated_by},
+            quiet        => $self->{quiet}
         );
         # Terminate processing.
         $self->{finish} = 'success';

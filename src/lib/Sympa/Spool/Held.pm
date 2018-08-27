@@ -96,11 +96,12 @@ sub remove {
     my $handle  = shift;
     my %options = @_;
 
-    if ($options{email}) {
+    if ($options{validated_by}) {
         return 1 if $handle->basename =~ /,\S+\z/;
 
         my $enc_email = sprintf ',%s',
-            Sympa::Tools::Text::encode_filesystem_safe($options{email});
+            Sympa::Tools::Text::encode_filesystem_safe(
+            $options{validated_by});
         my $enc_quiet = $options{quiet} ? ',quiet' : '';
         return $handle->rename(sprintf '%s/%s%s%s',
             $self->{directory}, $handle->basename, $enc_email, $enc_quiet);
@@ -133,7 +134,7 @@ Sympa::Spool::Held - Spool for held messages waiting for confirmation
       Sympa::Spool::Held->new(context => $list, authkey => $authkey);
   my ($message, $handle) = $spool->next;
 
-  $spool->remove($handle, email => $validator, quiet => 1);
+  $spool->remove($handle, validated_by => $validator, quiet => 1);
   $spool->remove($handle);
 
 =head1 DESCRIPTION
@@ -154,7 +155,7 @@ See also L<Sympa::Spool/"Public methods">.
 If the pairs describing metadatas are specified,
 contents returned by next() are filtered by them.
 
-=item remove ( $handle, [ email =E<gt> $email, [ quiet =E<gt> 1 ] ] )
+=item remove ( $handle, [ validated_by =E<gt> $email, [ quiet =E<gt> 1 ] ] )
 
 If email is specified, rename message file to add it as extension, instead of
 removing message file.

@@ -44,6 +44,7 @@ use Sympa::Log;
 use Sympa::Mailer;
 use Sympa::Process;
 use Sympa::Spindle::ProcessDigest;
+use Sympa::Spindle::ProcessHeld;
 use Sympa::Spindle::ProcessIncoming;
 use Sympa::Spindle::ProcessModeration;
 use Sympa::Tools::Data;
@@ -233,16 +234,17 @@ $SIG{'PIPE'} = 'IGNORE';     # Ignore SIGPIPE ; prevents process from dying
 my $index_queuedigest = 0;   # verify the digest queue
 
 while (not $spindle->{finish} or $spindle->{finish} ne 'term') {
-    # Process digest only in master process ({generation} is 0).
-    # Scan queuedigest.
-    if (0 == $process->{generation}
-        and $index_queuedigest++ >= $digestsleep) {
-        $index_queuedigest = 0;
-        Sympa::Spindle::ProcessDigest->new->spin;
-    }
-    # Process validated messages under moderation.
+    # Process messages to be distributed only in master process.
     if (0 == $process->{generation}) {
+        # Process validated messages under confirmation.
+        Sympa::Spindle::ProcessHeld->new->spin;
+        # Process validated messages under moderation.
         Sympa::Spindle::ProcessModeration->new->spin;
+        # Scan digest spools.
+        if ($index_queuedigest++ >= $digestsleep) {
+            $index_queuedigest = 0;
+            Sympa::Spindle::ProcessDigest->new->spin;
+        }
     }
 
     $spindle->spin;
