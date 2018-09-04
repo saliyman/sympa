@@ -50,10 +50,10 @@ sub _filter {
     my $metadata = shift;
 
     # Compat. <= 6.2.36.
-    $metadata->{validated} = 'nobody'
+    $metadata->{validated_by} = 'nobody'
         if $metadata
-        and $metadata->{validated}
-        and $metadata->{validated} eq '.distribute';
+        and $metadata->{validated_by}
+        and $metadata->{validated_by} eq '.distribute';
 
     return $self->SUPER::_filter($metadata);
 }
@@ -68,8 +68,15 @@ sub _load {
     return [sort { $mtime{$a} <=> $mtime{$b} } @$metadatas];
 }
 
-use constant _marshal_regexp =>
-    qr{\A([^\s\@]+)\@([-.\w]+)_([\da-f]+)(,[^,]+|[.]distribute)?(,quiet)?\z};
+use constant _marshal_format => '%s@%s_%s%s%s';
+use constant _marshal_keys   => [
+    qw(localpart domainpart AUTHKEY
+        validated_by quiet)
+];
+use constant _marshal_regexp => qr{\A
+    ([^\s\@]+) \@ ([-.\w]+) _ ([\da-f]+)
+    (,[^,]+|[.]distribute)? (,quiet)?
+\z};
 
 sub remove {
     my $self    = shift;

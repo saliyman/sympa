@@ -132,7 +132,7 @@ sub _reject {
     my $message = shift;
 
     # Messages marked validated should not be rejected.
-    return 0 if $message->{validated};
+    return 0 if $message->{validated_by};
 
     # Assign distributing user as envelope sender to whom DSN will be sent.
     $message->{envelope_sender} = $self->{rejected_by};
@@ -307,7 +307,7 @@ sub _validate {
     my $message = shift;
 
     # Messages marked validated should not be validated again.
-    return 0 if $message->{validated};
+    return 0 if $message->{validated_by};
 
     unless (ref $message->{context} eq 'Sympa::List') {
         $log->syslog('notice', 'Unknown list %s', $message->{localpart});
@@ -330,10 +330,10 @@ sub _distribute {
     my $message = shift;
 
     # Messages _not_ marked validated should not be distributed.
-    return 0 unless $message->{validated};
+    return 0 unless $message->{validated_by};
 
     my $distributed_by =
-        Sympa::Tools::Text::canonic_email($message->{validated});
+        Sympa::Tools::Text::canonic_email($message->{validated_by});
     # Compat. <= 6.2.36.
     $distributed_by = Sympa::get_address($message->{context}, 'editor')
         unless Sympa::Tools::Text::valid_email($distributed_by);

@@ -92,6 +92,7 @@ sub _on_success {
         $self->{distaff}->remove(
             $handle,
             validated_by => $self->{validated_by},
+            auth_method  => 'md5',
             quiet        => $self->{quiet}
         );
         # Terminate processing.
@@ -119,7 +120,7 @@ sub _validate {
     my $message = shift;
 
     # Messages marked validated should not be validated again.
-    return 0 if $message->{validated};
+    return 0 if $message->{validated_by};
 
     unless (ref $message->{context} eq 'Sympa::List') {
         $log->syslog('notice', 'Unknown list %s', $message->{localpart});
@@ -142,11 +143,11 @@ sub _distribute {
     my $message = shift;
 
     # Messages _not_ marked validated should not be distributed.
-    return 0 unless $message->{validated};
+    return 0 unless $message->{validated_by};
 
     # Overwrite attributes.
     $self->{confirmed_by} =
-        Sympa::Tools::Text::canonic_email($message->{validated});
+        Sympa::Tools::Text::canonic_email($message->{validated_by});
     $self->{quiet} ||= !!$message->{quiet};
 
     # Decrpyt message.
@@ -155,7 +156,8 @@ sub _distribute {
 
     # Assign privileges of confirming user to the message.
     $message->{envelope_sender} = $self->{confirmed_by};
-    $message->{md5_check}       = 1;
+    $message->{md5_check} =
+        ($message->{auth_method} and $message->{auth_method} eq 'md5');
 
     unless (ref $message->{context} eq 'Sympa::List') {
         $log->syslog('notice', 'Unknown list %s', $message->{localpart});

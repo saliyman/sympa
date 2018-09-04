@@ -48,10 +48,15 @@ sub _filter {
 
     return 1 unless $metadata;
 
-    if ($metadata->{validated}) {
-        $metadata->{validated} =~ s/\A,//;
-        $metadata->{validated} = Sympa::Tools::Text::decode_filesystem_safe(
-            $metadata->{validated});
+    if ($metadata->{validated_by}) {
+        $metadata->{validated_by} =~ s/\A,//;
+        $metadata->{validated_by} =
+            Sympa::Tools::Text::decode_filesystem_safe(
+            $metadata->{validated_by});
+    }
+
+    if ($metadata->{auth_method}) {
+        $metadata->{auth_method} =~ s/\A,//;
     }
 
     1;
@@ -63,13 +68,19 @@ sub _filter_pre {
 
     return 1 unless $metadata;
 
-    if ($metadata->{validated}) {
+    if ($metadata->{validated_by}) {
         # Encode e-mail.
-        $metadata->{validated} = sprintf ',%s',
+        $metadata->{validated_by} = sprintf ',%s',
             Sympa::Tools::Text::encode_filesystem_safe(
-            $metadata->{validated});
+            $metadata->{validated_by});
     } else {
-        $metadata->{validated} = '';
+        $metadata->{validated_by} = '';
+    }
+
+    if ($metadata->{auth_method}) {
+        $metadata->{auth_method} = sprintf ',%s', $metadata->{auth_method};
+    } else {
+        $metadata->{auth_method} = '';
     }
 
     if ($metadata->{quiet}) {
@@ -84,11 +95,15 @@ sub _filter_pre {
 
 use constant _generator => 'Sympa::Message';
 
-use constant _marshal_format => '%s@%s_%s%s%s';
-use constant _marshal_keys =>
-    [qw(localpart domainpart AUTHKEY validated quiet)];
-use constant _marshal_regexp =>
-    qr{\A([^\s\@]+)\@([-.\w]+)_([\da-f]+)(,[^,]+)?(,quiet)?\z};
+use constant _marshal_format => '%s@%s_%s%s%s%s';
+use constant _marshal_keys   => [
+    qw(localpart domainpart AUTHKEY
+        validated_by auth_method quiet)
+];
+use constant _marshal_regexp => qr{\A
+    ([^\s\@]+) \@ ([-.\w]+) _ ([\da-f]+)
+    (,[^,]+)? (,(?:smtp|dkim|md5|smime))? (,quiet)?
+\z}x;
 use constant _store_key => 'authkey';
 
 sub remove {
@@ -99,12 +114,17 @@ sub remove {
     if ($options{validated_by}) {
         return 1 if $handle->basename =~ /,\S+\z/;
 
-        my $enc_email = sprintf ',%s',
+        my $enc_validated_by = sprintf ',%s',
             Sympa::Tools::Text::encode_filesystem_safe(
             $options{validated_by});
+        my $enc_auth_method = sprintf ',%s',
+            ($options{auth_method} || 'smtp');
         my $enc_quiet = $options{quiet} ? ',quiet' : '';
-        return $handle->rename(sprintf '%s/%s%s%s',
-            $self->{directory}, $handle->basename, $enc_email, $enc_quiet);
+        return $handle->rename(
+            sprintf '%s/%s%s%s%s', $self->{directory},
+            $handle->basename,     $enc_validated_by,
+            $enc_auth_method,      $enc_quiet
+        );
     } else {
         return $self->SUPER::remove($handle);
     }
@@ -184,10 +204,18 @@ This class particularly gives following metadata:
 Authentication (confirmation or moderation) key generated automatically
 when the message is stored into spool.
 
-=item {validated}
+=item {validated_by}
 
 Keeps an e-mail address of validator, if message has been renamed using
 remove() with option.
+
+=item {auth_method}
+
+TBD.
+
+=item {quiet}
+
+TBD.
 
 =back
 
