@@ -2315,7 +2315,8 @@ sub check_action_parameters {
     }
 
     ## Validate CSRF token when one is required
-    if (defined($require_csrftoken{$param->{'action'}})) {
+    if (defined($require_csrftoken{$param->{'action'}})
+        and $ENV{'REQUEST_METHOD'} ne 'GET') {
         wwslog('debug', 'Action %s: CSRF token required', $param->{'action'});
 
         unless (defined($in{'csrftoken'})
