@@ -43,8 +43,13 @@ my $log = Sympa::Log->instance;
 my %list_of_families;
 my @uncompellable_param = (
     'msg_topic.keywords',
+    'owner_include.parameters',
+    'editor_include.parameters',
+    'member_include.parameters',
+    # Compat. <=6.2.62
     'owner_include.source_parameters',
-    'editor_include.source_parameters'
+    'editor_include.source_parameters',
+    'member_include.source_parameters',
 );
 
 sub get_families {
@@ -194,6 +199,7 @@ sub check_param_constraint {
             $self->{'name'}, $list->{'name'});
         return undef;
     }
+LOOP_PARAM:
     foreach my $param (keys %{$constraint}) {
         my $constraint_value = $constraint->{$param};
         my $param_value;
@@ -213,7 +219,7 @@ sub check_param_constraint {
         # exception for uncompellable parameter
         foreach my $forbidden (@uncompellable_param) {
             if ($param eq $forbidden) {
-                next;
+                next LOOP_PARAM;
             }
         }
 

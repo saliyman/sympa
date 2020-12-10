@@ -2603,7 +2603,15 @@ our %pinfo = (
                 order      => 2,
                 gettext_id => 'data source parameters',
                 format     => '.*',
-                occurrence => '0-1'
+                occurrence => '0-1',
+                obsolete   => 1
+            },
+            parameters => {
+                context    => [qw(list)],
+                order      => 2,
+                gettext_id => 'data source parameters',
+                format     => '.+',
+                occurrence => '0-n'
             },
         },
         occurrence => '0-n'
@@ -2627,7 +2635,15 @@ our %pinfo = (
                 order      => 2,
                 gettext_id => 'data source parameters',
                 format     => '.*',
-                occurrence => '0-1'
+                occurrence => '0-1',
+                obsolete   => 1
+            },
+            parameters => {
+                context    => [qw(list)],
+                order      => 2,
+                gettext_id => 'data source parameters',
+                format     => '.+',
+                occurrence => '0-n'
             },
             profile => {
                 context    => [qw(list)],
@@ -2675,7 +2691,15 @@ our %pinfo = (
                 order      => 2,
                 gettext_id => 'data source parameters',
                 format     => '.*',
-                occurrence => '0-1'
+                occurrence => '0-1',
+                obsolete   => 1
+            },
+            parameters => {
+                context    => [qw(list)],
+                order      => 2,
+                gettext_id => 'data source parameters',
+                format     => '.+',
+                occurrence => '0-n'
             },
             reception => {
                 context    => [qw(list)],

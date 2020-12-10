@@ -3930,8 +3930,8 @@ sub _load_include_admin_user_file {
 
     my $output   = '';
     my $filename = $entry->{'source'} . '.incl';
-    my @data     = split ',', $entry->{'source_parameters'}
-        if defined $entry->{'source_parameters'};
+    my @data     = @{$entry->{'parameters'}}
+        if ref $entry->{'parameters'} eq 'ARRAY';
     my $template = Sympa::Template->new($self, subdir => 'data_sources');
     unless ($template->parse({param => [@data]}, $filename, \$output)) {
         $log->syslog('err', 'Failed to parse %s', $filename);
@@ -4150,7 +4150,8 @@ sub _load_include_admin_user_file {
             next unless ref $cfg;    # include_file doesn't have parameters
             foreach my $k (keys %$entry) {
                 next if $k eq 'source';
-                next if $k eq 'source_parameters';
+                next if $k eq 'parameters';
+                next if $k eq 'source_parameters';    # Compat.<=6.2.62
                 next unless defined $entry->{$k};
                 $cfg->{$k} = $entry->{$k};
             }
