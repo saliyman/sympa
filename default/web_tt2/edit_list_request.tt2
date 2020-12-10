@@ -109,6 +109,34 @@
                                                          pitem  = kS
                                                          val    = kV
                                                     %]
+                                                [%~ ELSIF kS.occurrence.match('n$') ~%]
+                                                    <!-- array -->
+                                                    [% nI = 0 ~%]
+                                                    [% FOREACH nV = kV ~%]
+                                                        <div class="row">
+                                                            <div id="item.[% pS.name %].[% oI %].[% kS.name %].[% nI %]" class="small-9 large-10 columns">
+                                                                [% PROCESS EditListLeaf
+                                                                    ppaths = [pS.name,oI,kS.name,nI]
+                                                                    pitem  = kS
+                                                                    val    = nV
+                                                                %]
+                                                            </div>
+
+                                                            [% UNLESS kS.occurrence.match('^1') && kV.size() == 1 ~%]
+                                                                <div class="small-3 large-2 columns">
+                                                                    [% PROCESS EditListArrayDel
+                                                                        ppaths   = [pS.name,oI,kS.name,nI]
+                                                                        pitem    = kS
+                                                                        labelled = 1
+                                                                    %]
+                                                                </div>
+                                                            [%~ END %]
+                                                        </div>
+                                                        [%~ nI = nI + 1 %]
+                                                    [%~ END %]
+                                                    <!-- FIXME -->
+
+                                                    <!-- end array -->
                                                 [%~ ELSIF kS.type == 'leaf' ~%]
                                                     [% PROCESS EditListLeaf
                                                          ppaths = [pS.name,oI,kS.name]
@@ -174,6 +202,34 @@
                                                          pitem  = kS
                                                          val    = kV
                                                     %]
+                                                [%~ ELSIF kS.occurrence.match('n$') ~%]
+                                                    <!-- array -->
+                                                    [% nI = 0 ~%]
+                                                    [% FOREACH nV = kV ~%]
+                                                        <div class="row">
+                                                            <div id="item.[% pS.name %].[% oI %].[% kS.name %].[% nI %]" class="small-9 large-10 columns">
+                                                                [% PROCESS EditListLeaf
+                                                                    ppaths = [pS.name,oI,kS.name,nI]
+                                                                    pitem  = kS
+                                                                    val    = nV
+                                                                %]
+                                                            </div>
+
+                                                            [% UNLESS kS.occurrence.match('^1') && kV.size() == 1 ~%]
+                                                                <div class="small-3 large-2 columns">
+                                                                    [% PROCESS EditListArrayDel
+                                                                        ppaths   = [pS.name,oI,kS.name,nI]
+                                                                        pitem    = kS
+                                                                        labelled = 1
+                                                                    %]
+                                                                </div>
+                                                            [%~ END %]
+                                                        </div>
+                                                        [%~ nI = nI + 1 %]
+                                                    [%~ END %]
+                                                    <!-- FIXME -->
+
+                                                    <!-- end array -->
                                                 [%~ ELSIF kS.type == 'leaf' ~%]
                                                     [% PROCESS EditListLeaf
                                                          ppaths = [pS.name,oI,kS.name]
@@ -217,6 +273,34 @@
                                                      pitem  = kS
                                                      val    = kV
                                                 %]
+                                            [%~ ELSIF kS.occurrence.match('n$') ~%]
+                                                <!-- array -->
+                                                [% nI = 0 ~%]
+                                                [% FOREACH nV = kV ~%]
+                                                    <div class="row">
+                                                        <div id="item.[% pS.name %].[% kS.name %].[% nI %]" class="small-9 large-10 columns">
+                                                            [% PROCESS EditListLeaf
+                                                                ppaths = [pS.name,kS.name,nI]
+                                                                pitem  = kS
+                                                                val    = nV
+                                                            %]
+                                                        </div>
+
+                                                        [% UNLESS kS.occurrence.match('^1') && kV.size() == 1 ~%]
+                                                            <div class="small-3 large-2 columns">
+                                                                [% PROCESS EditListArrayDel
+                                                                    ppaths   = [pS.name,kS.name,nI]
+                                                                    pitem    = kS
+                                                                    labelled = 1
+                                                                %]
+                                                            </div>
+                                                        [%~ END %]
+                                                    </div>
+                                                    [%~ nI = nI + 1 %]
+                                                [%~ END %]
+                                                <!-- FIXME -->
+
+                                                <!-- end array -->
                                             [%~ ELSIF kS.type == 'leaf' ~%]
                                                 [% PROCESS EditListLeaf
                                                      ppaths = [pS.name,kS.name]

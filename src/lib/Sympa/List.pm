@@ -4063,9 +4063,19 @@ sub _load_include_admin_user_file {
                     next;
                 }
 
-                $hash{$key} =
+                my $value =
                     $self->_load_list_param($key, $1,
                     $pinfo->{$pname}{'file_format'}{$key});
+                if ($pinfo->{$pname}{'file_format'}{$key}{'occurrence'} =~
+                    /n$/
+                    and not(ref $value eq 'ARRAY')) {
+                    # - One of multiple values without split_char
+                    push @{$hash{$key}}, $value;
+                } else {
+                    # - Arrayref as multiple values with split_char
+                    # - Scalar as single value
+                    $hash{$key} = $value;
+                }
             }
 
             ## Apply defaults & Check required keys
@@ -4120,11 +4130,13 @@ sub _load_include_admin_user_file {
             }
 
             my $value = $self->_load_list_param($pname, $1, $pinfo->{$pname});
-
-            if (($pinfo->{$pname}{'occurrence'} =~ /n$/)
-                && !(ref($value) =~ /^ARRAY/)) {
+            if ($pinfo->{$pname}{'occurrence'} =~ /n$/
+                and not(ref $value eq 'ARRAY')) {
+                # - One of multiple values without split_char
                 push @{$include{$pname}}, $value;
             } else {
+                # - Arrayref as multiple values with split_char
+                # - Scalar as single value
                 $include{$pname} = $value;
             }
         }
@@ -4841,6 +4853,13 @@ sub _save_list_param {
                         @{$p->{$k}}
                     )
                 );
+            } elsif ($pinfo->{$key}{'file_format'}{$k}{'occurrence'} =~ /n$/)
+            {
+                next unless $p->{$k} and @{$p->{$k}};
+
+                foreach my $elt (@{$p->{$k}}) {
+                    $fd->print(sprintf "%s %s\n", $k, $elt);
+                }
             } else {
                 ## Skip if empty value
                 next unless defined $p->{$k} and $p->{$k} =~ /\S/;
@@ -5140,9 +5159,19 @@ sub _load_list_config_file {
                     next;
                 }
 
-                $hash{$key} =
+                my $value =
                     $self->_load_list_param($key, $1,
                     $pinfo->{$pname}{'file_format'}{$key});
+                if ($pinfo->{$pname}{'file_format'}{$key}{'occurrence'} =~
+                    /n$/
+                    and not(ref $value eq 'ARRAY')) {
+                    # - One of multiple values without split_char
+                    push @{$hash{$key}}, $value;
+                } else {
+                    # - Arrayref as multiple values with split_char
+                    # - Scalar as single value
+                    $hash{$key} = $value;
+                }
             }
 
             ## Apply defaults & Check required keys
@@ -5203,10 +5232,13 @@ sub _load_list_config_file {
 
             delete $admin{'defaults'}{$pname};
 
-            if (($pinfo->{$pname}{'occurrence'} =~ /n$/)
-                && !(ref($value) =~ /^ARRAY/)) {
+            if ($pinfo->{$pname}{'occurrence'} =~ /n$/
+                and not(ref $value eq 'ARRAY')) {
+                # - One of multiple values without split_char
                 push @{$admin{$pname}}, $value;
             } else {
+                # - Arrayref as multiple values with split_char
+                # - Scalar as single value
                 $admin{$pname} = $value;
             }
         }
