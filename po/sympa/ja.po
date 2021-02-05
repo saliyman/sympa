@@ -3434,6 +3434,10 @@ msgstr "人の電子メールアドレスを変更できるのは"
 msgid "Use blacklist"
 msgstr "ブラックリストの使用"
 
+#: src/lib/Sympa/Config/Schema.pm:1424
+msgid "Use denylist"
+msgstr "ブラックリストの使用"
+
 #: src/lib/Sympa/Config/Schema.pm:1428
 msgid ""
 "List of operations separated by comma for which blacklist filter is "
@@ -3441,6 +3445,10 @@ msgid ""
 msgstr ""
 "ブラックリストを適用する操作 (複数あるときはカンマで区切る)。このパラメータを"
 "「何もしない (none)」に設定すると、ブラックリスト機能は画面に出なくなります。"
+
+#: src/lib/Sympa/Config/Schema.pm:1428
+msgid "List of operations separated by comma for which denylist filter is applied.  Setting this parameter to \"none\" will hide the denylist feature."
+msgstr "ブラックリストを適用する操作 (複数あるときはカンマで区切る)。このパラメータを「何もしない (none)」に設定すると、ブラックリスト機能は画面に出なくなります。"
 
 #: src/lib/Sympa/Config/Schema.pm:1449
 msgid "The subscribe parameter defines the rules for subscribing to the list."
@@ -5679,8 +5687,16 @@ msgstr "リストの読者の追加、削除、読者登録のモデレーショ
 msgid "Blacklist:"
 msgstr "ブラックリスト:"
 
+#: default/web_tt2/admin.tt2:17
+msgid "Denylist:"
+msgstr "ブラックリスト:"
+
 #: default/web_tt2/admin.tt2:18
 msgid "Handles the set of black-listed mail addresses for this list."
+msgstr "このリストでブラックリストに入れるアドレスを操作します。"
+
+#: default/web_tt2/admin.tt2:18
+msgid "Handles the set of deny-listed mail addresses for this list."
 msgstr "このリストでブラックリストに入れるアドレスを操作します。"
 
 #: default/web_tt2/admin.tt2:25
@@ -6030,13 +6046,26 @@ msgstr "利用者情報"
 msgid "Blacklist management"
 msgstr "ブラックリスト管理"
 
+#: default/web_tt2/blacklist.tt2:3
+msgid "Denylist management"
+msgstr "ブラックリスト管理"
+
 #: default/web_tt2/blacklist.tt2:7
 msgid "The current blacklist is empty"
+msgstr "現在、ブラックリストは空です"
+
+#: default/web_tt2/blacklist.tt2:7
+msgid "The current denylist is empty"
 msgstr "現在、ブラックリストは空です"
 
 #. (rows)
 #: default/web_tt2/blacklist.tt2:9
 msgid "The current blacklist contains %1 line(s)"
+msgstr "現在、ブラックリストに %1 行あります"
+
+#. (rows)
+#: default/web_tt2/blacklist.tt2:9
+msgid "The current denylist contains %1 line(s)"
 msgstr "現在、ブラックリストに %1 行あります"
 
 #. (conf.use_blacklist)
@@ -6047,6 +6076,11 @@ msgid ""
 msgstr ""
 "ブラックリストに載っているメール アドレスでの操作は拒否します。次の操作にブ"
 "ラックリストを使います: %1。"
+
+#. (conf.use_blacklist)
+#: default/web_tt2/blacklist.tt2:12
+msgid "Operation requested by users which email is listed in the denylist file are rejected. The denylist is in use for the following operation: %1."
+msgstr "ブラックリストに載っているメール アドレスでの操作は拒否します。次の操作にブラックリストを使います: %1。"
 
 #: default/web_tt2/blacklist.tt2:15
 msgid "Syntax:"
@@ -8272,6 +8306,10 @@ msgstr "拒否メッセージのサイト全体での初期値"
 msgid "Add to blacklist"
 msgstr "ブラックリストに追加"
 
+#: default/web_tt2/modindex.tt2:133 default/web_tt2/viewmod.tt2:46
+msgid "Add to denylist"
+msgstr "ブラックリストに追加"
+
 #: default/web_tt2/modindex.tt2:142
 msgid "No messages to moderate"
 msgstr "モデレーションを待っているメッセージはありません"
@@ -8282,6 +8320,10 @@ msgstr "モデレーション"
 
 #: default/web_tt2/modindex.tt2:158
 msgid "edit blacklist"
+msgstr "ブラックリストの変更"
+
+#: default/web_tt2/modindex.tt2:158
+msgid "edit denylist"
 msgstr "ブラックリストの変更"
 
 #: default/web_tt2/modindex.tt2:160
@@ -8405,6 +8447,10 @@ msgstr "メッセージのテンプレート"
 
 #: default/web_tt2/nav.tt2:376 default/web_tt2/review.tt2:35
 msgid "Blacklist"
+msgstr "ブラックリスト"
+
+#: default/web_tt2/nav.tt2:376 default/web_tt2/review.tt2:35
+msgid "Denylist"
 msgstr "ブラックリスト"
 
 #: default/web_tt2/nav.tt2:388
@@ -9495,6 +9541,10 @@ msgstr ""
 "たとしても登録解除ができ (リストのオーナーが削除することもでき) ます。この人"
 "たちは、通常の登録解除や削除の際に除外テーブルに入り、登録や追加の際に除外"
 "テーブルから抜けます。"
+
+#: default/web_tt2/show_exclude.tt2:6
+msgid "Users listed below are excluded from the list. Beware, that this feature is different from the denylist. Exclusion makes sense when a list is based on external data sources ; thanks to exclusion, a user can unsubscribe (or being removed by list owner) even though they should be included via an external data source. Users get into the exclusion table, through the standard unsubscribe/delete functions. They get off the exclusion table with the standard subscribe/add functions."
+msgstr "下の一覧にある人はリスト登録から除外します。これはブラックリスト機能とは違いますのでご注意ください。除外は、外部データソースによるリスト登録のときだけ意味を持ちます。除外された人は、外部データソースから取り込まれることになっていたとしても登録解除ができ (リストのオーナーが削除することもでき) ます。この人たちは、通常の登録解除や削除の際に除外テーブルに入り、登録や追加の際に除外テーブルから抜けます。"
 
 #: default/web_tt2/show_exclude.tt2:57
 msgid "No user excluded."
@@ -13588,6 +13638,11 @@ msgstr "\"%1\" は正しいアドレスではありません"
 #. (report_param.email || report_param.value)
 #: default/mail_tt2/report.tt2:655
 msgid "Address \"%1\" belongs to a blacklisted domain"
+msgstr "｢%1｣というメールアドレスは、ドメインがブラックリストに登録されています"
+
+#. (report_param.email || report_param.value)
+#: default/mail_tt2/report.tt2:655
+msgid "Address \"%1\" belongs to a denylisted domain"
 msgstr "｢%1｣というメールアドレスは、ドメインがブラックリストに登録されています"
 
 #: default/mail_tt2/report.tt2:658

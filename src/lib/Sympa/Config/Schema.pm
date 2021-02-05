@@ -1421,11 +1421,11 @@ our %pinfo = (
         context    => [qw(domain site)],
         order      => 30.00_05,
         group      => 'command',
-        gettext_id => 'Use blacklist',
+        gettext_id => 'Use denylist',
         default    => 'send,create_list',
         split_char => ',',
         gettext_comment =>
-            'List of operations separated by comma for which blacklist filter is applied.  Setting this parameter to "none" will hide the blacklist feature.',
+            'List of operations separated by comma for which denylist filter is applied.  Setting this parameter to "none" will hide the denylist feature.',
         format => '[-.\w]+',
     },
 

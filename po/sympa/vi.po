@@ -5281,8 +5281,16 @@ msgstr "Cho phép bạn thêm hay xoá người đăng ký, điều tiết sự 
 msgid "Blacklist:"
 msgstr "Danh sách cấm:"
 
+#: default/web_tt2/admin.tt2:17
+msgid "Denylist:"
+msgstr "Danh sách cấm:"
+
 #: default/web_tt2/admin.tt2:18
 msgid "Handles the set of black-listed mail addresses for this list."
+msgstr "Quản lý tập hợp các địa chỉ thư bị cấm đối với hộp thư chung này."
+
+#: default/web_tt2/admin.tt2:18
+msgid "Handles the set of deny-listed mail addresses for this list."
 msgstr "Quản lý tập hợp các địa chỉ thư bị cấm đối với hộp thư chung này."
 
 #: default/web_tt2/admin.tt2:25
@@ -5646,13 +5654,26 @@ msgstr "Thông tin về người đăng ký"
 msgid "Blacklist management"
 msgstr "Quản lý danh sách cấm"
 
+#: default/web_tt2/blacklist.tt2:3
+msgid "Denylist management"
+msgstr "Quản lý danh sách cấm"
+
 #: default/web_tt2/blacklist.tt2:7
 msgid "The current blacklist is empty"
+msgstr "Danh sách cấm hiện thời rỗng"
+
+#: default/web_tt2/blacklist.tt2:7
+msgid "The current denylist is empty"
 msgstr "Danh sách cấm hiện thời rỗng"
 
 #. (rows)
 #: default/web_tt2/blacklist.tt2:9
 msgid "The current blacklist contains %1 line(s)"
+msgstr "Danh sách cấm hiện thời chứa %1 dòng"
+
+#. (rows)
+#: default/web_tt2/blacklist.tt2:9
+msgid "The current denylist contains %1 line(s)"
 msgstr "Danh sách cấm hiện thời chứa %1 dòng"
 
 #. (conf.use_blacklist)
@@ -8011,6 +8032,10 @@ msgstr "Quản lý Điều tiết"
 msgid "edit blacklist"
 msgstr "Sửa danh sách cấm"
 
+#: default/web_tt2/modindex.tt2:158
+msgid "edit denylist"
+msgstr "Sửa danh sách cấm"
+
 #: default/web_tt2/modindex.tt2:160
 msgid "Manage rejection messages"
 msgstr "Quản lý các thông điệp từ chối"
@@ -8144,6 +8169,10 @@ msgstr "Tên thông điệp"
 
 #: default/web_tt2/nav.tt2:376 default/web_tt2/review.tt2:35
 msgid "Blacklist"
+msgstr "Danh sách cấm"
+
+#: default/web_tt2/nav.tt2:376 default/web_tt2/review.tt2:35
+msgid "Denylist"
 msgstr "Danh sách cấm"
 
 #: default/web_tt2/nav.tt2:388

@@ -3503,6 +3503,10 @@ msgstr "Quien puede cambiar la dirección de correo del usuario"
 msgid "Use blacklist"
 msgstr "Usar lista negra"
 
+#: src/lib/Sympa/Config/Schema.pm:1424
+msgid "Use denylist"
+msgstr "Usar lista negra"
+
 #: src/lib/Sympa/Config/Schema.pm:1428
 msgid ""
 "List of operations separated by comma for which blacklist filter is "
@@ -3511,6 +3515,10 @@ msgstr ""
 "Lista de operaciones separadas por coma para las se aplica el filtro de "
 "lista negra. Estableciendo este parámetro a \"none\" se ocultará la "
 "característica de lista negra."
+
+#: src/lib/Sympa/Config/Schema.pm:1428
+msgid "List of operations separated by comma for which denylist filter is applied.  Setting this parameter to \"none\" will hide the denylist feature."
+msgstr "Lista de operaciones separadas por coma para las se aplica el filtro de lista negra. Estableciendo este parámetro a \"none\" se ocultará la característica de lista negra."
 
 #: src/lib/Sympa/Config/Schema.pm:1449
 msgid "The subscribe parameter defines the rules for subscribing to the list."
@@ -5837,11 +5845,19 @@ msgstr "Permite añadir y eliminar suscriptores, moderar suscripciones, etc."
 msgid "Blacklist:"
 msgstr "Lista negra:"
 
+#: default/web_tt2/admin.tt2:17
+msgid "Denylist:"
+msgstr "Lista negra:"
+
 #: default/web_tt2/admin.tt2:18
 msgid "Handles the set of black-listed mail addresses for this list."
 msgstr ""
 "Gestiona el conjunto de direcciones de correo en la lista negra de esta "
 "lista."
+
+#: default/web_tt2/admin.tt2:18
+msgid "Handles the set of deny-listed mail addresses for this list."
+msgstr "Gestiona el conjunto de direcciones de correo en la lista negra de esta lista."
 
 #: default/web_tt2/admin.tt2:25
 msgid "Manage archives:"
@@ -6198,13 +6214,26 @@ msgstr "Información de usuario"
 msgid "Blacklist management"
 msgstr "Gestión de lista negra"
 
+#: default/web_tt2/blacklist.tt2:3
+msgid "Denylist management"
+msgstr "Gestión de lista negra"
+
 #: default/web_tt2/blacklist.tt2:7
 msgid "The current blacklist is empty"
+msgstr "La lista negra actual está vacía"
+
+#: default/web_tt2/blacklist.tt2:7
+msgid "The current denylist is empty"
 msgstr "La lista negra actual está vacía"
 
 #. (rows)
 #: default/web_tt2/blacklist.tt2:9
 msgid "The current blacklist contains %1 line(s)"
+msgstr "La lista negra actual contiene %1 línea(s)"
+
+#. (rows)
+#: default/web_tt2/blacklist.tt2:9
+msgid "The current denylist contains %1 line(s)"
 msgstr "La lista negra actual contiene %1 línea(s)"
 
 #. (conf.use_blacklist)
@@ -6216,6 +6245,11 @@ msgstr ""
 "Será rechazada cualquier operación solicitada por usuarios con la dirección "
 "de correo en esta lista negra. A lista negra impide realizar las siguientes "
 "operaciones: %1."
+
+#. (conf.use_blacklist)
+#: default/web_tt2/blacklist.tt2:12
+msgid "Operation requested by users which email is listed in the denylist file are rejected. The denylist is in use for the following operation: %1."
+msgstr "Será rechazada cualquier operación solicitada por usuarios con la dirección de correo en esta lista negra. A lista negra impide realizar las siguientes operaciones: %1."
 
 #: default/web_tt2/blacklist.tt2:15
 msgid "Syntax:"
@@ -8455,6 +8489,10 @@ msgstr "Mensaje de rechazo por defecto del servidor"
 msgid "Add to blacklist"
 msgstr "Añadir a la lista negra"
 
+#: default/web_tt2/modindex.tt2:133 default/web_tt2/viewmod.tt2:46
+msgid "Add to denylist"
+msgstr "Añadir a la lista negra"
+
 #: default/web_tt2/modindex.tt2:142
 msgid "No messages to moderate"
 msgstr "Sin mensajes que moderar"
@@ -8465,6 +8503,10 @@ msgstr "Gestión de moderación"
 
 #: default/web_tt2/modindex.tt2:158
 msgid "edit blacklist"
+msgstr "Editar lista negra"
+
+#: default/web_tt2/modindex.tt2:158
+msgid "edit denylist"
 msgstr "Editar lista negra"
 
 #: default/web_tt2/modindex.tt2:160
@@ -8586,6 +8628,10 @@ msgstr "Plantillas de mensaje"
 
 #: default/web_tt2/nav.tt2:376 default/web_tt2/review.tt2:35
 msgid "Blacklist"
+msgstr "Lista negra"
+
+#: default/web_tt2/nav.tt2:376 default/web_tt2/review.tt2:35
+msgid "Denylist"
 msgstr "Lista negra"
 
 #: default/web_tt2/nav.tt2:388
@@ -9688,6 +9734,10 @@ msgstr ""
 "usuarios se incluyen en la tabla de exclusión mediante las funciones "
 "estándares de baja/borrado. Se eliminan mediante las funciones estándares de "
 "suscripción/adición."
+
+#: default/web_tt2/show_exclude.tt2:6
+msgid "Users listed below are excluded from the list. Beware, that this feature is different from the denylist. Exclusion makes sense when a list is based on external data sources ; thanks to exclusion, a user can unsubscribe (or being removed by list owner) even though they should be included via an external data source. Users get into the exclusion table, through the standard unsubscribe/delete functions. They get off the exclusion table with the standard subscribe/add functions."
+msgstr "Los usuarios listados más abajo están excluidos de la lista. Ten cuidado, que esta característica es diferente a la lista negra. La exclusión tiene sentido en una lista basada en una fuente de datos externa; con la exclusión es posible dar de baja a un usuario (o eliminarlo de la lista) incluso cuando debería estar incluido a través de la fuente externa de datos. Los usuarios se incluyen en la tabla de exclusión mediante las funciones estándares de baja/borrado. Se eliminan mediante las funciones estándares de suscripción/adición."
 
 #: default/web_tt2/show_exclude.tt2:57
 msgid "No user excluded."
@@ -13725,6 +13775,11 @@ msgstr "La dirección \"%1\" no es correcta"
 #. (report_param.email || report_param.value)
 #: default/mail_tt2/report.tt2:655
 msgid "Address \"%1\" belongs to a blacklisted domain"
+msgstr "La dirección \"%1\" pertenece a un dominio en lista negra"
+
+#. (report_param.email || report_param.value)
+#: default/mail_tt2/report.tt2:655
+msgid "Address \"%1\" belongs to a denylisted domain"
 msgstr "La dirección \"%1\" pertenece a un dominio en lista negra"
 
 #: default/mail_tt2/report.tt2:658

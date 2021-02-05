@@ -5702,13 +5702,26 @@ msgstr "Medlemsinformasjon"
 msgid "Blacklist management"
 msgstr "Svarteliste-behandling"
 
+#: default/web_tt2/blacklist.tt2:3
+msgid "Denylist management"
+msgstr "Svarteliste-behandling"
+
 #: default/web_tt2/blacklist.tt2:7
 msgid "The current blacklist is empty"
+msgstr "Den nåværende svartelisten er tom"
+
+#: default/web_tt2/blacklist.tt2:7
+msgid "The current denylist is empty"
 msgstr "Den nåværende svartelisten er tom"
 
 #. (rows)
 #: default/web_tt2/blacklist.tt2:9
 msgid "The current blacklist contains %1 line(s)"
+msgstr "Den nåværende svartelisten inneholder %1 linje(r)"
+
+#. (rows)
+#: default/web_tt2/blacklist.tt2:9
+msgid "The current denylist contains %1 line(s)"
 msgstr "Den nåværende svartelisten inneholder %1 linje(r)"
 
 #. (conf.use_blacklist)
@@ -5719,6 +5732,11 @@ msgid ""
 msgstr ""
 "Handlinger av brukere hvis e-postadresser er listet opp i svartelistefilen "
 "blir avvist. Svartelisten brukes av følgende handling: %1"
+
+#. (conf.use_blacklist)
+#: default/web_tt2/blacklist.tt2:12
+msgid "Operation requested by users which email is listed in the denylist file are rejected. The denylist is in use for the following operation: %1."
+msgstr "Handlinger av brukere hvis e-postadresser er listet opp i svartelistefilen blir avvist. Svartelisten brukes av følgende handling: %1"
 
 #: default/web_tt2/blacklist.tt2:15
 #, fuzzy
@@ -8083,6 +8101,10 @@ msgstr "Brukeradministrasjon"
 msgid "edit blacklist"
 msgstr "Rediger svarteliste"
 
+#: default/web_tt2/modindex.tt2:158
+msgid "edit denylist"
+msgstr "Rediger svarteliste"
+
 #: default/web_tt2/modindex.tt2:160
 #, fuzzy
 msgid "Manage rejection messages"
@@ -8218,6 +8240,10 @@ msgstr "Temanavn for melding"
 
 #: default/web_tt2/nav.tt2:376 default/web_tt2/review.tt2:35
 msgid "Blacklist"
+msgstr "Svartelist"
+
+#: default/web_tt2/nav.tt2:376 default/web_tt2/review.tt2:35
+msgid "Denylist"
 msgstr "Svartelist"
 
 #: default/web_tt2/nav.tt2:388

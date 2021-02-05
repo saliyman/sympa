@@ -3500,6 +3500,10 @@ msgstr "Wer die Mail-Adresse von Nutzern ändern kann"
 msgid "Use blacklist"
 msgstr "Schwarze Liste verwenden"
 
+#: src/lib/Sympa/Config/Schema.pm:1424
+msgid "Use denylist"
+msgstr "Schwarze Liste verwenden"
+
 #: src/lib/Sympa/Config/Schema.pm:1428
 msgid ""
 "List of operations separated by comma for which blacklist filter is "
@@ -3507,6 +3511,10 @@ msgid ""
 msgstr ""
 "Kommagetrennte Liste der Operationen, für die die Schwarze Liste angewendet "
 "wird. Das Setzen dieses Wertes auf \"none\" versteckt die Schwarze Liste."
+
+#: src/lib/Sympa/Config/Schema.pm:1428
+msgid "List of operations separated by comma for which denylist filter is applied.  Setting this parameter to \"none\" will hide the denylist feature."
+msgstr "Kommagetrennte Liste der Operationen, für die die Schwarze Liste angewendet wird. Das Setzen dieses Wertes auf \"none\" versteckt die Schwarze Liste."
 
 #: src/lib/Sympa/Config/Schema.pm:1449
 msgid "The subscribe parameter defines the rules for subscribing to the list."
@@ -5842,8 +5850,16 @@ msgstr ""
 msgid "Blacklist:"
 msgstr "Schwarze Liste:"
 
+#: default/web_tt2/admin.tt2:17
+msgid "Denylist:"
+msgstr "Schwarze Liste:"
+
 #: default/web_tt2/admin.tt2:18
 msgid "Handles the set of black-listed mail addresses for this list."
+msgstr "Verwaltet die gesperrten Mailadressen für diese Liste."
+
+#: default/web_tt2/admin.tt2:18
+msgid "Handles the set of deny-listed mail addresses for this list."
 msgstr "Verwaltet die gesperrten Mailadressen für diese Liste."
 
 #: default/web_tt2/admin.tt2:25
@@ -6200,13 +6216,26 @@ msgstr "Benutzerinformationen"
 msgid "Blacklist management"
 msgstr "Blacklist verwalten"
 
+#: default/web_tt2/blacklist.tt2:3
+msgid "Denylist management"
+msgstr "Blacklist verwalten"
+
 #: default/web_tt2/blacklist.tt2:7
 msgid "The current blacklist is empty"
+msgstr "Die schwarze Liste ist derzeit leer"
+
+#: default/web_tt2/blacklist.tt2:7
+msgid "The current denylist is empty"
 msgstr "Die schwarze Liste ist derzeit leer"
 
 #. (rows)
 #: default/web_tt2/blacklist.tt2:9
 msgid "The current blacklist contains %1 line(s)"
+msgstr "Die schwarze Liste enthält derzeit %1 Zeile(n)"
+
+#. (rows)
+#: default/web_tt2/blacklist.tt2:9
+msgid "The current denylist contains %1 line(s)"
 msgstr "Die schwarze Liste enthält derzeit %1 Zeile(n)"
 
 #. (conf.use_blacklist)
@@ -6218,6 +6247,11 @@ msgstr ""
 "Aktionen, die von Benutzern angefordert werden, deren E-Mail-Adresse in der "
 "schwarzen Liste aufgeführt sind, werden zurückgewiesen. Die schwarze Liste "
 "gilt für die folgende Aktion: %1."
+
+#. (conf.use_blacklist)
+#: default/web_tt2/blacklist.tt2:12
+msgid "Operation requested by users which email is listed in the denylist file are rejected. The denylist is in use for the following operation: %1."
+msgstr "Aktionen, die von Benutzern angefordert werden, deren E-Mail-Adresse in der schwarzen Liste aufgeführt sind, werden zurückgewiesen. Die schwarze Liste gilt für die folgende Aktion: %1."
 
 #: default/web_tt2/blacklist.tt2:15
 msgid "Syntax:"
@@ -8462,6 +8496,10 @@ msgstr "Vorgegebene Ablehnungsnachricht des Servers"
 msgid "Add to blacklist"
 msgstr "Zur schwarzen Liste hinzufügen"
 
+#: default/web_tt2/modindex.tt2:133 default/web_tt2/viewmod.tt2:46
+msgid "Add to denylist"
+msgstr "Zur schwarzen Liste hinzufügen"
+
 #: default/web_tt2/modindex.tt2:142
 msgid "No messages to moderate"
 msgstr "Keine zu moderierende Nachrichten"
@@ -8472,6 +8510,10 @@ msgstr "Moderationsverwaltung"
 
 #: default/web_tt2/modindex.tt2:158
 msgid "edit blacklist"
+msgstr "Schwarze Liste bearbeiten"
+
+#: default/web_tt2/modindex.tt2:158
+msgid "edit denylist"
 msgstr "Schwarze Liste bearbeiten"
 
 #: default/web_tt2/modindex.tt2:160
@@ -8593,6 +8635,10 @@ msgstr "Nachrichtenvorlagen"
 
 #: default/web_tt2/nav.tt2:376 default/web_tt2/review.tt2:35
 msgid "Blacklist"
+msgstr "Schwarze Liste"
+
+#: default/web_tt2/nav.tt2:376 default/web_tt2/review.tt2:35
+msgid "Denylist"
 msgstr "Schwarze Liste"
 
 #: default/web_tt2/nav.tt2:388
@@ -9701,6 +9747,10 @@ msgstr ""
 "werden sollten. Benutzer gelangen über die gewöhnlichen Abmelden-/Löschen-"
 "Funktionen in die Ausschlusstabelle. Sie werden über die gewöhnlichen "
 "Abonnieren/Hinzufügen-Funktionen wieder aus der Ausschlusstabelle entfernt."
+
+#: default/web_tt2/show_exclude.tt2:6
+msgid "Users listed below are excluded from the list. Beware, that this feature is different from the denylist. Exclusion makes sense when a list is based on external data sources ; thanks to exclusion, a user can unsubscribe (or being removed by list owner) even though they should be included via an external data source. Users get into the exclusion table, through the standard unsubscribe/delete functions. They get off the exclusion table with the standard subscribe/add functions."
+msgstr "Unten aufgelistete Benutzer wurden von der Liste ausgeschlossen. Beachten Sie, dass sich diese Funktion von der Blacklist unterscheidet. Ausschließen kann sinnvoll sein, wenn eine Liste auf externen Datenquellen basiert. Ausgeschlossene Benutzer können sich abmelden (oder vom Listeneigentümer entfernt werden), obwohl sie laut der externen Datenquelle aufgenommen werden sollten. Benutzer gelangen über die gewöhnlichen Abmelden-/Löschen-Funktionen in die Ausschlusstabelle. Sie werden über die gewöhnlichen Abonnieren/Hinzufügen-Funktionen wieder aus der Ausschlusstabelle entfernt."
 
 #: default/web_tt2/show_exclude.tt2:57
 msgid "No user excluded."
@@ -13783,6 +13833,11 @@ msgstr "Adresse \"%1\" ist falsch"
 #. (report_param.email || report_param.value)
 #: default/mail_tt2/report.tt2:655
 msgid "Address \"%1\" belongs to a blacklisted domain"
+msgstr "Adresse \"%1\" gehört zu einer verbotenen Domain"
+
+#. (report_param.email || report_param.value)
+#: default/mail_tt2/report.tt2:655
+msgid "Address \"%1\" belongs to a denylisted domain"
 msgstr "Adresse \"%1\" gehört zu einer verbotenen Domain"
 
 #: default/mail_tt2/report.tt2:658

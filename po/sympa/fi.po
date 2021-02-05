@@ -5505,8 +5505,16 @@ msgstr ""
 msgid "Blacklist:"
 msgstr "Sulkulista:"
 
+#: default/web_tt2/admin.tt2:17
+msgid "Denylist:"
+msgstr "Sulkulista:"
+
 #: default/web_tt2/admin.tt2:18
 msgid "Handles the set of black-listed mail addresses for this list."
+msgstr "Käsittelee tämän listan sulkulistalla olevat sähköpostiosoitteet."
+
+#: default/web_tt2/admin.tt2:18
+msgid "Handles the set of deny-listed mail addresses for this list."
 msgstr "Käsittelee tämän listan sulkulistalla olevat sähköpostiosoitteet."
 
 #: default/web_tt2/admin.tt2:25
@@ -5870,15 +5878,31 @@ msgstr "Tilaajan tiedot"
 msgid "Blacklist management"
 msgstr "Sulkulistan hallinnointi"
 
+# nlsref 16,7
+#: default/web_tt2/blacklist.tt2:3
+msgid "Denylist management"
+msgstr "Sulkulistan hallinnointi"
+
 # nlsref 16,70
 #: default/web_tt2/blacklist.tt2:7
 msgid "The current blacklist is empty"
 msgstr "Sulkulista on tyhjä"
 
 # nlsref 16,70
+#: default/web_tt2/blacklist.tt2:7
+msgid "The current denylist is empty"
+msgstr "Sulkulista on tyhjä"
+
+# nlsref 16,70
 #. (rows)
 #: default/web_tt2/blacklist.tt2:9
 msgid "The current blacklist contains %1 line(s)"
+msgstr "Sulkulista sisältää %1 rivi(ä)"
+
+# nlsref 16,70
+#. (rows)
+#: default/web_tt2/blacklist.tt2:9
+msgid "The current denylist contains %1 line(s)"
 msgstr "Sulkulista sisältää %1 rivi(ä)"
 
 #. (conf.use_blacklist)
@@ -8221,6 +8245,10 @@ msgstr "Palvelimen oletushylkäysviesti"
 msgid "Add to blacklist"
 msgstr "Lisää sulkulistalle"
 
+#: default/web_tt2/modindex.tt2:133 default/web_tt2/viewmod.tt2:46
+msgid "Add to denylist"
+msgstr "Lisää sulkulistalle"
+
 #: default/web_tt2/modindex.tt2:142
 #, fuzzy
 msgid "No messages to moderate"
@@ -8233,6 +8261,10 @@ msgstr "Moderoinnin hallinta"
 
 #: default/web_tt2/modindex.tt2:158
 msgid "edit blacklist"
+msgstr "muokkaa sulkulistaa"
+
+#: default/web_tt2/modindex.tt2:158
+msgid "edit denylist"
 msgstr "muokkaa sulkulistaa"
 
 # nlsref 15,7
@@ -8368,6 +8400,10 @@ msgstr "Viestin nimi"
 
 #: default/web_tt2/nav.tt2:376 default/web_tt2/review.tt2:35
 msgid "Blacklist"
+msgstr "Sulkulista"
+
+#: default/web_tt2/nav.tt2:376 default/web_tt2/review.tt2:35
+msgid "Denylist"
 msgstr "Sulkulista"
 
 #: default/web_tt2/nav.tt2:388

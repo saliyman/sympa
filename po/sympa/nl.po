@@ -3299,6 +3299,10 @@ msgstr "Wie kan het e-mailadres van de gebruiker veranderen"
 msgid "Use blacklist"
 msgstr "Zwarte lijst gebruiken"
 
+#: src/lib/Sympa/Config/Schema.pm:1424
+msgid "Use denylist"
+msgstr "Zwarte lijst gebruiken"
+
 #: src/lib/Sympa/Config/Schema.pm:1428
 msgid ""
 "List of operations separated by comma for which blacklist filter is "
@@ -3307,6 +3311,10 @@ msgstr ""
 "Lijst met door komma's gescheiden bewerkingen waarvoor het zwarte-"
 "lijstfilter wordt toegepast. Als u deze parameter instelt op \"none\", wordt "
 "de zwarte-lijstfunctie verborgen."
+
+#: src/lib/Sympa/Config/Schema.pm:1428
+msgid "List of operations separated by comma for which denylist filter is applied.  Setting this parameter to \"none\" will hide the denylist feature."
+msgstr "Lijst met door komma's gescheiden bewerkingen waarvoor het zwarte-lijstfilter wordt toegepast. Als u deze parameter instelt op \"none\", wordt de zwarte-lijstfunctie verborgen."
 
 #: src/lib/Sympa/Config/Schema.pm:1449
 msgid "The subscribe parameter defines the rules for subscribing to the list."
@@ -5352,8 +5360,16 @@ msgstr ""
 msgid "Blacklist:"
 msgstr "Zwarte lijst:"
 
+#: default/web_tt2/admin.tt2:17
+msgid "Denylist:"
+msgstr "Zwarte lijst:"
+
 #: default/web_tt2/admin.tt2:18
 msgid "Handles the set of black-listed mail addresses for this list."
+msgstr "Behandelt de set van zwarte lijst mailadressen voor deze lijst."
+
+#: default/web_tt2/admin.tt2:18
+msgid "Handles the set of deny-listed mail addresses for this list."
 msgstr "Behandelt de set van zwarte lijst mailadressen voor deze lijst."
 
 #: default/web_tt2/admin.tt2:25
@@ -5706,13 +5722,26 @@ msgstr "Informatie gebruiker"
 msgid "Blacklist management"
 msgstr "Zwarte lijst beheren"
 
+#: default/web_tt2/blacklist.tt2:3
+msgid "Denylist management"
+msgstr "Zwarte lijst beheren"
+
 #: default/web_tt2/blacklist.tt2:7
 msgid "The current blacklist is empty"
+msgstr "De zwarte lijst is leeg"
+
+#: default/web_tt2/blacklist.tt2:7
+msgid "The current denylist is empty"
 msgstr "De zwarte lijst is leeg"
 
 #. (rows)
 #: default/web_tt2/blacklist.tt2:9
 msgid "The current blacklist contains %1 line(s)"
+msgstr "De zwarte lijst bevat momenteel %1 regel(s)"
+
+#. (rows)
+#: default/web_tt2/blacklist.tt2:9
+msgid "The current denylist contains %1 line(s)"
 msgstr "De zwarte lijst bevat momenteel %1 regel(s)"
 
 #. (conf.use_blacklist)
@@ -5723,6 +5752,11 @@ msgid ""
 msgstr ""
 "Opdrachten van gebruikers wier e-mailadres op de zwarte lijst staat worden "
 "geweigerd. De zwarte lijst wordt voor de volgende bewerking gebruikt: %1."
+
+#. (conf.use_blacklist)
+#: default/web_tt2/blacklist.tt2:12
+msgid "Operation requested by users which email is listed in the denylist file are rejected. The denylist is in use for the following operation: %1."
+msgstr "Opdrachten van gebruikers wier e-mailadres op de zwarte lijst staat worden geweigerd. De zwarte lijst wordt voor de volgende bewerking gebruikt: %1."
 
 #: default/web_tt2/blacklist.tt2:15
 msgid "Syntax:"
@@ -7902,6 +7936,10 @@ msgstr "Standaardafwijzingsbericht van de server"
 msgid "Add to blacklist"
 msgstr "Aan zwarte lijst toevoegen"
 
+#: default/web_tt2/modindex.tt2:133 default/web_tt2/viewmod.tt2:46
+msgid "Add to denylist"
+msgstr "Aan zwarte lijst toevoegen"
+
 #: default/web_tt2/modindex.tt2:142
 msgid "No messages to moderate"
 msgstr "Geen berichten om te modereren"
@@ -7912,6 +7950,10 @@ msgstr "Moderatiebeheer"
 
 #: default/web_tt2/modindex.tt2:158
 msgid "edit blacklist"
+msgstr "zwarte lijst wijzigen"
+
+#: default/web_tt2/modindex.tt2:158
+msgid "edit denylist"
 msgstr "zwarte lijst wijzigen"
 
 #: default/web_tt2/modindex.tt2:160
@@ -8033,6 +8075,10 @@ msgstr "Berichtsjablonen"
 
 #: default/web_tt2/nav.tt2:376 default/web_tt2/review.tt2:35
 msgid "Blacklist"
+msgstr "Zwarte lijst"
+
+#: default/web_tt2/nav.tt2:376 default/web_tt2/review.tt2:35
+msgid "Denylist"
 msgstr "Zwarte lijst"
 
 #: default/web_tt2/nav.tt2:388

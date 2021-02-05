@@ -5530,11 +5530,19 @@ msgstr ""
 msgid "Blacklist:"
 msgstr "Μαύρη λίστα:"
 
+#: default/web_tt2/admin.tt2:17
+msgid "Denylist:"
+msgstr "Μαύρη λίστα:"
+
 #: default/web_tt2/admin.tt2:18
 msgid "Handles the set of black-listed mail addresses for this list."
 msgstr ""
 "Ελέγχει τις αποκλεισμένες διευθύνσεις ηλεκτρονικής αλληλογραφίας για αυτή τη "
 "λίστα."
+
+#: default/web_tt2/admin.tt2:18
+msgid "Handles the set of deny-listed mail addresses for this list."
+msgstr "Ελέγχει τις αποκλεισμένες διευθύνσεις ηλεκτρονικής αλληλογραφίας για αυτή τη λίστα."
 
 #: default/web_tt2/admin.tt2:25
 msgid "Manage archives:"
@@ -5893,13 +5901,26 @@ msgstr "Πληροφορίες συνδρομητή"
 msgid "Blacklist management"
 msgstr "Διαχείριση μαύρης λίστας"
 
+#: default/web_tt2/blacklist.tt2:3
+msgid "Denylist management"
+msgstr "Διαχείριση μαύρης λίστας"
+
 #: default/web_tt2/blacklist.tt2:7
 msgid "The current blacklist is empty"
+msgstr "Η τρέχουσα μαύρη λίστα είναι άδεια"
+
+#: default/web_tt2/blacklist.tt2:7
+msgid "The current denylist is empty"
 msgstr "Η τρέχουσα μαύρη λίστα είναι άδεια"
 
 #. (rows)
 #: default/web_tt2/blacklist.tt2:9
 msgid "The current blacklist contains %1 line(s)"
+msgstr "Η τρέχουσα μαύρη λίστα περιέχει %1 γραμμές"
+
+#. (rows)
+#: default/web_tt2/blacklist.tt2:9
+msgid "The current denylist contains %1 line(s)"
 msgstr "Η τρέχουσα μαύρη λίστα περιέχει %1 γραμμές"
 
 #. (conf.use_blacklist)
@@ -8228,6 +8249,10 @@ msgstr "Προεπιλεγμένο μήνυμα απόρριψης"
 msgid "Add to blacklist"
 msgstr "Προσθήκη στη μάυρη-λίστα"
 
+#: default/web_tt2/modindex.tt2:133 default/web_tt2/viewmod.tt2:46
+msgid "Add to denylist"
+msgstr "Προσθήκη στη μάυρη-λίστα"
+
 #: default/web_tt2/modindex.tt2:142
 #, fuzzy
 msgid "No messages to moderate"
@@ -8239,6 +8264,10 @@ msgstr "Διαχείριση συντονισμού"
 
 #: default/web_tt2/modindex.tt2:158
 msgid "edit blacklist"
+msgstr "επεξεργασία μαύρης-λίστας"
+
+#: default/web_tt2/modindex.tt2:158
+msgid "edit denylist"
 msgstr "επεξεργασία μαύρης-λίστας"
 
 #: default/web_tt2/modindex.tt2:160
@@ -8368,6 +8397,10 @@ msgstr "Όνομα μηνύματος"
 
 #: default/web_tt2/nav.tt2:376 default/web_tt2/review.tt2:35
 msgid "Blacklist"
+msgstr "Μαύρη-Λίστα"
+
+#: default/web_tt2/nav.tt2:376 default/web_tt2/review.tt2:35
+msgid "Denylist"
 msgstr "Μαύρη-Λίστα"
 
 #: default/web_tt2/nav.tt2:388
@@ -9492,6 +9525,10 @@ msgstr ""
 "θα έπρεπε να συμπεριλαμβάνονταν μέσω εξωτερικής πηγής δεδομένων. Οι χρήστες "
 "μπαίνουν και βγαίνουν στον πίνακα εξαιρέσεων, μέσω των συνηθισμένων "
 "διαδικασιών εγγραφής/διαγραφής."
+
+#: default/web_tt2/show_exclude.tt2:6
+msgid "Users listed below are excluded from the list. Beware, that this feature is different from the denylist. Exclusion makes sense when a list is based on external data sources ; thanks to exclusion, a user can unsubscribe (or being removed by list owner) even though they should be included via an external data source. Users get into the exclusion table, through the standard unsubscribe/delete functions. They get off the exclusion table with the standard subscribe/add functions."
+msgstr "Οι παρακάτω χρήστες εξαιρούνται από τον κατάλογο. Προσέξτε, αυτή η λειτουργικότητα είναι διαφορετική από τη μαύρη-λίστα. Οι εξαιρέσεις έχουν νόημα εάν η λίστα βασίζεται σε εξωτερικές πηγές δεδομένων. Χάρη στις εξαιρέσεις, οι χρήστες μπορούν να διαγράφονται από συνδρομητές ακόμα και εάν θα έπρεπε να συμπεριλαμβάνονταν μέσω εξωτερικής πηγής δεδομένων. Οι χρήστες μπαίνουν και βγαίνουν στον πίνακα εξαιρέσεων, μέσω των συνηθισμένων διαδικασιών εγγραφής/διαγραφής."
 
 #: default/web_tt2/show_exclude.tt2:57
 msgid "No user excluded."

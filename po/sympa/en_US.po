@@ -3329,6 +3329,10 @@ msgstr "Unable to create list."
 msgid "Use blacklist"
 msgstr "Use denylist"
 
+#: src/lib/Sympa/Config/Schema.pm:1424
+msgid "Use denylist"
+msgstr "Use denylist"
+
 #: src/lib/Sympa/Config/Schema.pm:1428
 msgid ""
 "List of operations separated by comma for which blacklist filter is "
@@ -3336,6 +3340,10 @@ msgid ""
 msgstr ""
 "List of operations separated by comma for which denylist filter is "
 "applied.  Setting this parameter to \"none\" will hide the denylist feature."
+
+#: src/lib/Sympa/Config/Schema.pm:1428
+msgid "List of operations separated by comma for which denylist filter is applied.  Setting this parameter to \"none\" will hide the denylist feature."
+msgstr "List of operations separated by comma for which denylist filter is applied.  Setting this parameter to \"none\" will hide the denylist feature."
 
 #: src/lib/Sympa/Config/Schema.pm:1449
 msgid "The subscribe parameter defines the rules for subscribing to the list."
@@ -5560,8 +5568,16 @@ msgstr ""
 msgid "Blacklist:"
 msgstr "Denylist:"
 
+#: default/web_tt2/admin.tt2:17
+msgid "Denylist:"
+msgstr "Denylist:"
+
 #: default/web_tt2/admin.tt2:18
 msgid "Handles the set of black-listed mail addresses for this list."
+msgstr "Handles the set of deny-listed mail addresses for this list."
+
+#: default/web_tt2/admin.tt2:18
+msgid "Handles the set of deny-listed mail addresses for this list."
 msgstr "Handles the set of deny-listed mail addresses for this list."
 
 #: default/web_tt2/admin.tt2:25
@@ -5926,13 +5942,26 @@ msgstr "Subscriber information"
 msgid "Blacklist management"
 msgstr "Denylist management"
 
+#: default/web_tt2/blacklist.tt2:3
+msgid "Denylist management"
+msgstr "Denylist management"
+
 #: default/web_tt2/blacklist.tt2:7
 msgid "The current blacklist is empty"
+msgstr "The current denylist is empty"
+
+#: default/web_tt2/blacklist.tt2:7
+msgid "The current denylist is empty"
 msgstr "The current denylist is empty"
 
 #. (rows)
 #: default/web_tt2/blacklist.tt2:9
 msgid "The current blacklist contains %1 line(s)"
+msgstr "The current denylist contains %1 line(s)"
+
+#. (rows)
+#: default/web_tt2/blacklist.tt2:9
+msgid "The current denylist contains %1 line(s)"
 msgstr "The current denylist contains %1 line(s)"
 
 # rtb
@@ -5944,6 +5973,12 @@ msgid ""
 msgstr ""
 "Operation requested by users which email is listed in the denylist file are "
 "rejected. The denylist is in use for the following operation: %1."
+
+# rtb
+#. (conf.use_blacklist)
+#: default/web_tt2/blacklist.tt2:12
+msgid "Operation requested by users which email is listed in the denylist file are rejected. The denylist is in use for the following operation: %1."
+msgstr "Operation requested by users which email is listed in the denylist file are rejected. The denylist is in use for the following operation: %1."
 
 # rtb
 #: default/web_tt2/blacklist.tt2:15
@@ -8324,6 +8359,10 @@ msgstr "Server default rejection message"
 msgid "Add to blacklist"
 msgstr "Add to denylist"
 
+#: default/web_tt2/modindex.tt2:133 default/web_tt2/viewmod.tt2:46
+msgid "Add to denylist"
+msgstr "Add to denylist"
+
 #: default/web_tt2/modindex.tt2:142
 #, fuzzy
 msgid "No messages to moderate"
@@ -8335,6 +8374,10 @@ msgstr "Moderation management"
 
 #: default/web_tt2/modindex.tt2:158
 msgid "edit blacklist"
+msgstr "edit denylist"
+
+#: default/web_tt2/modindex.tt2:158
+msgid "edit denylist"
 msgstr "edit denylist"
 
 #: default/web_tt2/modindex.tt2:160
@@ -8468,6 +8511,10 @@ msgstr "Message name"
 
 #: default/web_tt2/nav.tt2:376 default/web_tt2/review.tt2:35
 msgid "Blacklist"
+msgstr "Denylist"
+
+#: default/web_tt2/nav.tt2:376 default/web_tt2/review.tt2:35
+msgid "Denylist"
 msgstr "Denylist"
 
 #: default/web_tt2/nav.tt2:388
@@ -9604,6 +9651,10 @@ msgstr ""
 "external data source. Users get into the exclusion table, through the "
 "standard unsubscribe/delete functions. They get off the exclusion table with "
 "the standard subscribe/add functions."
+
+#: default/web_tt2/show_exclude.tt2:6
+msgid "Users listed below are excluded from the list. Beware, that this feature is different from the denylist. Exclusion makes sense when a list is based on external data sources ; thanks to exclusion, a user can unsubscribe (or being removed by list owner) even though they should be included via an external data source. Users get into the exclusion table, through the standard unsubscribe/delete functions. They get off the exclusion table with the standard subscribe/add functions."
+msgstr "Users listed below are excluded from the list. Beware, that this feature is different from the denylist. Exclusion makes sense when a list is based on external data sources ; thanks to exclusion, a user can unsubscribe (or being removed by list owner) even though they should be included via an external data source. Users get into the exclusion table, through the standard unsubscribe/delete functions. They get off the exclusion table with the standard subscribe/add functions."
 
 #: default/web_tt2/show_exclude.tt2:57
 msgid "No user excluded."
@@ -13747,6 +13798,11 @@ msgstr "Address \"%1\" is incorrect"
 #. (report_param.email || report_param.value)
 #: default/mail_tt2/report.tt2:655
 msgid "Address \"%1\" belongs to a blacklisted domain"
+msgstr "Address \"%1\" belongs to a denylisted domain"
+
+#. (report_param.email || report_param.value)
+#: default/mail_tt2/report.tt2:655
+msgid "Address \"%1\" belongs to a denylisted domain"
 msgstr "Address \"%1\" belongs to a denylisted domain"
 
 #: default/mail_tt2/report.tt2:658
