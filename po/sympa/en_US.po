@@ -3326,15 +3326,16 @@ msgid "Who is able to change user's email"
 msgstr "Unable to create list."
 
 #: src/lib/Sympa/Config/Schema.pm:1424
-#, fuzzy
 msgid "Use blacklist"
-msgstr "edit blacklist"
+msgstr "Use denylist"
 
 #: src/lib/Sympa/Config/Schema.pm:1428
 msgid ""
 "List of operations separated by comma for which blacklist filter is "
 "applied.  Setting this parameter to \"none\" will hide the blacklist feature."
 msgstr ""
+"List of operations separated by comma for which denylist filter is "
+"applied.  Setting this parameter to \"none\" will hide the denylist feature."
 
 #: src/lib/Sympa/Config/Schema.pm:1449
 msgid "The subscribe parameter defines the rules for subscribing to the list."
@@ -5557,11 +5558,11 @@ msgstr ""
 
 #: default/web_tt2/admin.tt2:17
 msgid "Blacklist:"
-msgstr "Blacklist:"
+msgstr "Denylist:"
 
 #: default/web_tt2/admin.tt2:18
 msgid "Handles the set of black-listed mail addresses for this list."
-msgstr "Handles the set of black-listed mail addresses for this list."
+msgstr "Handles the set of deny-listed mail addresses for this list."
 
 #: default/web_tt2/admin.tt2:25
 #, fuzzy
@@ -5923,28 +5924,26 @@ msgstr "Subscriber information"
 
 #: default/web_tt2/blacklist.tt2:3
 msgid "Blacklist management"
-msgstr "Blacklist management"
+msgstr "Denylist management"
 
 #: default/web_tt2/blacklist.tt2:7
 msgid "The current blacklist is empty"
-msgstr "The current blacklist is empty"
+msgstr "The current denylist is empty"
 
 #. (rows)
 #: default/web_tt2/blacklist.tt2:9
 msgid "The current blacklist contains %1 line(s)"
-msgstr "The current blacklist contains %1 line(s)"
+msgstr "The current denylist contains %1 line(s)"
 
 # rtb
 #. (conf.use_blacklist)
 #: default/web_tt2/blacklist.tt2:12
-#, fuzzy
 msgid ""
 "Operation requested by users which email is listed in the blacklist file are "
 "rejected. The blacklist is in use for the following operation: %1."
 msgstr ""
-"Any operation requested by a user with an address listed in the blacklist "
-"file is rejected. The\n"
-"blacklist is in use for the following operation:"
+"Operation requested by users which email is listed in the denylist file are "
+"rejected. The denylist is in use for the following operation: %1."
 
 # rtb
 #: default/web_tt2/blacklist.tt2:15
@@ -8322,9 +8321,8 @@ msgid "Server default rejection message"
 msgstr "Server default rejection message"
 
 #: default/web_tt2/modindex.tt2:133 default/web_tt2/viewmod.tt2:46
-#, fuzzy
 msgid "Add to blacklist"
-msgstr "Add to blacklist"
+msgstr "Add to denylist"
 
 #: default/web_tt2/modindex.tt2:142
 #, fuzzy
@@ -8337,7 +8335,7 @@ msgstr "Moderation management"
 
 #: default/web_tt2/modindex.tt2:158
 msgid "edit blacklist"
-msgstr "edit blacklist"
+msgstr "edit denylist"
 
 #: default/web_tt2/modindex.tt2:160
 msgid "Manage rejection messages"
@@ -8470,7 +8468,7 @@ msgstr "Message name"
 
 #: default/web_tt2/nav.tt2:376 default/web_tt2/review.tt2:35
 msgid "Blacklist"
-msgstr "Blacklist"
+msgstr "Denylist"
 
 #: default/web_tt2/nav.tt2:388
 msgid "Manage Archives"
@@ -9600,7 +9598,7 @@ msgid ""
 "the standard subscribe/add functions."
 msgstr ""
 "Users listed below are excluded from the list. Beware, that this feature is "
-"different from the blacklist. Exclusion makes sense when a list is based on "
+"different from the denylist. Exclusion makes sense when a list is based on "
 "external data sources ; thanks to exclusion, a user can unsubscribe (or "
 "being removed by list owner) even though they should be included via an "
 "external data source. Users get into the exclusion table, through the "
@@ -13749,7 +13747,7 @@ msgstr "Address \"%1\" is incorrect"
 #. (report_param.email || report_param.value)
 #: default/mail_tt2/report.tt2:655
 msgid "Address \"%1\" belongs to a blacklisted domain"
-msgstr ""
+msgstr "Address \"%1\" belongs to a denylisted domain"
 
 #: default/mail_tt2/report.tt2:658
 msgid "Provided password is incorrect"
