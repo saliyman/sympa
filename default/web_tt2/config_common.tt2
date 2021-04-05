@@ -99,7 +99,19 @@
     <!-- end del -->
 [%~ END ~%]
 
-[%~ BLOCK EditListLeaf # (ppaths,pitem,val) ~%]
+[%~ BLOCK EditListLeafArray # (ppaths,pitem,val) ~%]
+    [% vals = val # backup ~%]
+    [% idx = 0 ~%]
+    [% FOREACH val = vals ~%]
+        [% PROCESS EditListLeaf
+            is_multiple = 1
+        %]
+        [% idx = idx + 1 ~%]
+    [%~ END %]
+    [% val = vals # restore ~%]
+[%~ END ~%]
+
+[%~ BLOCK EditListLeaf # (ppaths,pitem,val[,is_multiple,idx]) ~%]
     [% IF pitem.enum ~%]
         [% PROCESS EditListEnum %]
     [%~ ELSIF pitem.scenario ~%]
@@ -113,11 +125,11 @@
     [%~ END %]
 [%~ END ~%]
 
-[%~ BLOCK EditListEnum # (ppaths,pitem,val) ~%]
+[%~ BLOCK EditListEnum # (ppaths,pitem,val[,is_multiple,idx]) ~%]
     <!-- enum -->
     [% IF pitem.privilege == 'write' ~%]
-        <select name="single_param.[% ppaths.join('.') %]"
-                id="param.[% ppaths.join('.') %]"
+        <select name="[%IF is_multiple; "multiple_param"; ELSE; "single_param"; END%].[% ppaths.join('.') %]"
+                id="param.[% ppaths.join('.') %][%IF is_multipe; "." _ idx; END%]"
                 [%~ IF pitem.field_type == 'lang' %] class="neutral"[% END %]>
             [% IF pitem.occurrence.match('^0') || val.length() == 0 %][%# FIXME ~%]
                 <option value=""></option>
@@ -149,11 +161,11 @@
     <!-- end enum -->
 [%~ END ~%]
 
-[%~ BLOCK EditListScenario # (ppaths,pitem,val) ~%]
+[%~ BLOCK EditListScenario # (ppaths,pitem,val[,is_multiple,idx]) ~%]
     <!-- scenario -->
     [% IF pitem.privilege == 'write' ~%]
-        <select name="single_param.[% ppaths.join('.') %].name"
-                id="param.[% ppaths.join('.') %]">
+        <select name="[%IF is_multiple; "multiple_param"; ELSE; "single_param"; END%].[% ppaths.join('.') %].name"
+                id="param.[% ppaths.join('.') %][%IF is_multipe; "." _ idx; END%]">
             [% FOREACH scenario = pitem.format ~%]
                 <option value="[% scenario.value.name %]"
                         [%~ IF scenario.value.name == val.name %] selected="selected"[% END %]>
@@ -175,11 +187,11 @@
     <!-- end scenario -->
 [%~ END ~%]
 
-[%~ BLOCK EditListTask # (ppaths,pitem,val) ~%]
+[%~ BLOCK EditListTask # (ppaths,pitem,val[,is_multiple,idx]) ~%]
     <!-- task -->
     [% IF pitem.privilege == 'write' ~%]
-        <select name="single_param.[% ppaths.join('.') %].name"
-                id="param.[% ppaths.join('.') %]">
+        <select name="[%IF is_multiple; "multiple_param"; ELSE; "single_param"; END%].[% ppaths.join('.') %].name"
+                id="param.[% ppaths.join('.') %][%IF is_multipe; "." _ idx; END%]">
             [% IF pitem.occurrence.match('^0') || val.length() == 0 %][%# FIXME ~%]
                 <option value=""></option>
             [%~ END %]
@@ -202,11 +214,11 @@
     <!-- end task -->
 [%~ END ~%]
 
-[%~ BLOCK EditListDatasource # (ppaths,pitem,val) ~%]
+[%~ BLOCK EditListDatasource # (ppaths,pitem,val[,is_multiple,idx]) ~%]
     <!-- datasource -->
     [% IF pitem.privilege == 'write' ~%]
-        <select name="single_param.[% ppaths.join('.') %]"
-                id="param.[% ppaths.join('.') %]">
+        <select name="[%IF is_multiple; "multiple_param"; ELSE; "single_param"; END%].[% ppaths.join('.') %]"
+                id="param.[% ppaths.join('.') %][%IF is_multipe; "." _ idx; END%]">
             [% IF pitem.occurrence.match('^0') || val.length() == 0 %][%# FIXME ~%]
                 <option value=""></option>
             [%~ END %]
@@ -229,14 +241,14 @@
     <!-- end datasource -->
 [%~ END ~%]
 
-[%~ BLOCK EditListScalar # (ppaths,pitem,val) ~%]
+[%~ BLOCK EditListScalar # (ppaths,pitem,val[,is_multiple,idx]) ~%]
     <!-- scalar -->
     [% IF pitem.privilege == 'write' ~%]
         [% IF pitem.unit ~%]
             <span style="display:inline-block">[%# FIXME %]
         [%~ END %]
-                <input name="single_param.[% ppaths.join('.') %]"
-                       id="param.[% ppaths.join('.') %]"
+                <input name="[%IF is_multiple; "multiple_param"; ELSE; "single_param"; END%].[% ppaths.join('.') %]"
+                        id="param.[% ppaths.join('.') %][%IF is_multipe; "." _ idx; END%]"
                        value="[% val %]" size="[% pitem.length %]"
                        [%~ IF pitem.field_type == 'password' %] type="password"
                        [%~ ELSE %] type="text"
