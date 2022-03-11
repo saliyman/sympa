@@ -424,10 +424,20 @@ sub begin {
         return 1;
     }
 
-    my $dbh = $self->__dbh;
-    return undef unless $dbh;
+    unless ($self->__dbh and $self->__dbh->begin_work) {
+        unless ($self->connect) {
+            $log->syslog('err', 'Unable to get a handle to %s database',
+                $self->{'db_name'});
+            return undef;
+        } else {
+            unless ($self->__dbh and $self->__dbh->begin_work) {
+                $log->syslog('err', 'Unable to begin transaction: %s',
+                    $self->error);
+                return undef;
+            }
+        }
+    }
 
-    $dbh->begin_work or die $DBI::errstr;
     $self->{_sdbPrevPersistency} = $self->set_persistent(0);
     return 1;
 }
