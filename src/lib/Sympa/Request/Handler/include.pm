@@ -406,7 +406,6 @@ sub _update_users {
 
     my @to_be_inserted;
 
-    $sdm->begin;
 
     while (my $entry = $ds->next) {
         my $email = $entry->[0];
@@ -452,19 +451,12 @@ sub _update_users {
 
         unless (%res) {
             $log->syslog('info', '%s: Aborted update', $ds);
-            $sdm->rollback;
             $ds->close;
             return;
         }
         $result{updated} += $res{updated} if $res{updated};
     }
 
-    unless ($sdm->commit) {
-        $log->syslog('err', 'Error at update user commit: %s', $sdm->error);
-        $sdm->rollback;
-        $ds->close;
-        return;
-    }
 
     my $time = time;
     # Avoid retrace of clock e.g. by outage of NTP server.

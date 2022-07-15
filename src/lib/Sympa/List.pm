@@ -1548,7 +1548,6 @@ sub delete_list_member {
     my $total = 0;
 
     my $sdm = Sympa::DatabaseManager->instance;
-    $sdm->begin;
 
     foreach my $who (@u) {
         next unless defined $who and length $who;
@@ -1604,12 +1603,6 @@ sub delete_list_member {
         $total--;
     }
 
-    unless ($sdm->commit) {
-        $log->syslog('err', 'Error at delete member commit: %s', $sdm->error);
-        $sdm->rollback;
-        return 0;
-    }
-
     $self->_cache_publish_expiry('member');
 
     return (-1 * $total);
@@ -1625,7 +1618,6 @@ sub delete_list_admin {
     my $total = 0;
 
     my $sdm = Sympa::DatabaseManager->instance;
-    $sdm->begin;
 
     foreach my $who (@u) {
         next unless defined $who and length $who;
@@ -1648,12 +1640,6 @@ sub delete_list_admin {
         }
 
         $total--;
-    }
-
-    unless ($sdm->commit) {
-        $log->syslog('err', 'Error at add member commit: %s', $sdm->error);
-        $sdm->rollback;
-        return 0;
     }
 
     $self->_cache_publish_expiry('admin_user');
@@ -3188,7 +3174,6 @@ sub add_list_member {
     }
 
     my $sdm = Sympa::DatabaseManager->instance;
-    $sdm->begin;
 
     foreach my $new_user (@new_users) {
         my $who = Sympa::Tools::Text::canonic_email($new_user->{'email'});
@@ -3336,11 +3321,6 @@ sub add_list_member {
         $current_list_members_count++;
     }
 
-    unless ($sdm->commit) {
-        $log->syslog('err', 'Error at add member commit: %s', $sdm->error);
-        $sdm->rollback;
-    }
-
     $self->_cache_publish_expiry('member');
     $self->_create_add_error_string() if ($self->{'add_outcome'}{'errors'});
     return 1;
@@ -3379,16 +3359,9 @@ sub add_list_admin {
     my $total = 0;
 
     my $sdm = Sympa::DatabaseManager->instance;
-    $sdm->begin;
 
     foreach my $user (@users) {
         $total++ if $self->_add_list_admin($role, $user);
-    }
-
-    unless ($sdm->commit) {
-        $log->syslog('err', 'Error at add admin commit: %s', $sdm->error);
-        $sdm->rollback;
-        return 0;
     }
 
     $self->_cache_publish_expiry('admin_user') if $total;
