@@ -471,8 +471,6 @@ sub dkim_sign {
         $log->syslog('err', 'Can\'t create Mail::DKIM::Signer');
         return undef;
     }
-    # For One-Click Unsubscribe.
-    $dkim->extended_headers({'List-Unsubscribe-Post' => '*'});
 
     # $new_body will store the body as fed to Mail::DKIM to reuse it
     # when returning the message as string.  Line terminators must be
@@ -535,8 +533,6 @@ sub arc_seal {
         $log->syslog('err', 'Can\'t create Mail::DKIM::ARC::Signer');
         return undef;
     }
-    # For One-Click Unsubscribe.
-    $arc->extended_headers({'List-Unsubscribe-Post' => '*'});
 
     # $new_body will store the body as fed to Mail::DKIM to reuse it
     # when returning the message as string.  Line terminators must be
