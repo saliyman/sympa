@@ -5885,24 +5885,6 @@ sub add_list_header {
         );
         $message->add_header('List-Help',
             join ', ', map { sprintf '<%s>', $_ } @urls);
-    } elsif ($field eq 'unsubscribe' and $options{oneclick}) {
-        if ($wwsympa_url
-            and my $id = $self->oneclick_id($options{oneclick})) {
-            my @urls = (
-                Sympa::get_url($self, 'oneclick', paths => [$id]),
-                Sympa::Tools::Text::mailtourl(
-                    Sympa::get_address($self, 'sympa'),
-                    query => {subject => sprintf('SIG %s', $self->{'name'})}
-                )
-            );
-            # Overwrite existing fields to prevent forgery.
-            $message->delete_header('List-Unsubscribe-Post');
-            $message->delete_header('List-Unsubscribe');
-            $message->add_header('List-Unsubscribe-Post',
-                'List-Unsubscribe=One-Click');
-            $message->add_header('List-Unsubscribe',
-                join ', ', map { sprintf '<%s>', $_ } @urls);
-        }
     } elsif ($field eq 'unsubscribe') {
         my @urls = (
             ($wwsympa_url ? (Sympa::get_url($self, 'signoff')) : ()),
